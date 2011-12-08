@@ -27,34 +27,18 @@ along with this program. If not, see  <http://www.gnu.org/licenses/>.
 #include <sstream>
 #include <vector>
 
-std::string exec(const char* cmd) {
-    FILE* pipe = popen(cmd, "r");
-    if (!pipe) return "ERROR";
-    char buffer[128];
-    std::string result = "";
-    while(!feof(pipe)) {
-        if(fgets(buffer, 128, pipe) != NULL)
-                result += buffer;
-    }
-    pclose(pipe);
-    return result;
-}
-
 const std::string TRACK_STRING = "A track";
 const std::string CODEC_ID_STRING = "Codec ID: ";
 const std::string TRACK_TYPE_STRING = "Track type: ";
 const std::string TRACK_NUMBER_STRING = "Track number: ";
 const std::string LANGUAGE_STRING = "Language: ";
 
-std::string substring_toend(std::string& s, int n_pos) {
-	int end_of_line = s.find("\n", n_pos);
-	return s.substr(n_pos, end_of_line - n_pos);
-}
-
-std::string parse(std::string& s, std::string key, int *n_pos) {
-	*n_pos = s.find(key, *n_pos) + key.size();
-	return substring_toend(s, *n_pos);
-}
+typedef struct {
+	std::string num;
+	std::string type;
+	std::string codec;
+	std::string language;
+}track_info_t;
 
 std::string toString(int number) {
    std::stringstream ss;
@@ -69,12 +53,28 @@ int toInteger(const std::string &str) {
 	return n;
 }
 
-typedef struct {
-	std::string num;
-	std::string type;
-	std::string codec;
-	std::string language;
-}track_info_t;
+std::string exec(const char* cmd) {
+    FILE* pipe = popen(cmd, "r");
+    if (!pipe) return "ERROR";
+    char buffer[128];
+    std::string result = "";
+    while(!feof(pipe)) {
+        if(fgets(buffer, 128, pipe) != NULL)
+                result += buffer;
+    }
+    pclose(pipe);
+    return result;
+}
+
+std::string substring_toend(std::string& s, int n_pos) {
+	int end_of_line = s.find("\n", n_pos);
+	return s.substr(n_pos, end_of_line - n_pos);
+}
+
+std::string parse(std::string& s, std::string key, int *n_pos) {
+	*n_pos = s.find(key, *n_pos) + key.size();
+	return substring_toend(s, *n_pos);
+}
 
 void fixFileName(std::string &filename) {
 	filename = "\"" + filename + "\"";
@@ -120,6 +120,44 @@ void cleanTrackNumberList(std::vector<int> &ret, int trueNumberOfTrack) {
 }
 
 
+std::vector<track_info_t> parseTracksInfos(std::string & mkvinfo_out) {
+	std::vector<track_info_t> tracks;
+    int found = mkvinfo_out.find(TRACK_STRING, 0) + TRACK_STRING.size();
+    while(found != std::string::npos){
+        // A new track has been found
+        track_info_t track;
+        track.num = parse(mkvinfo_out, TRACK_NUMBER_STRING, &found);
+        track.type = parse(mkvinfo_out, TRACK_TYPE_STRING, &found);
+        track.codec = parse(mkvinfo_out, CODEC_ID_STRING, &found);
+        //		if (track.type != "video")
+        //			track.language = parse(mkvinfo_out, LANGUAGE_STRING, &found);
+        tracks.push_back(track);
+        found = mkvinfo_out.find(TRACK_STRING, found + 1);
+    }
+    return tracks;
+}
+
+void extractTracks(const std::string &mkvfilename, const std::vector<int>& tracks_to_extract) {
+	// Creation of the command line to use for extraction
+    std::string cmdline_extraction("mkvextract tracks " + mkvfilename);
+    for(int i = 0;i < tracks_to_extract.size();i++){
+        cmdline_extraction += " " + toString(tracks_to_extract.at(i)) + ":Track" + toString(tracks_to_extract.at(i));
+    }
+    std::cout << "Running command line : " + cmdline_extraction << std::endl;
+    system(cmdline_extraction.c_str());
+}
+
+void printTracksInfos(std::vector<track_info_t> & tracks) {
+    std::cout << "Number of tracks = " << tracks.size() << std::endl;
+    for(std::vector<track_info_t>::iterator i = tracks.begin();i != tracks.end();i++){
+        std::cout << i->num << " : ";
+        std::cout << i->type << " : ";
+        //		if (i->type != "video")
+        //			std::cout << i->language << " : ";
+        std::cout << i->codec << std::endl;
+    }
+}
+
 int main(int argc, char *argv[])
 {
 	if (argc != 2) {
@@ -132,48 +170,14 @@ int main(int argc, char *argv[])
 	std::string cmdline("mkvinfo " + mkvfilename);
 	std::string mkvinfo_out = exec(cmdline.c_str());
 
-	int nb_tracks = 0;
-	std::vector<track_info_t> tracks;
+	std::vector<track_info_t> tracks = parseTracksInfos(mkvinfo_out);
+    printTracksInfos(tracks);
 
-	int found = mkvinfo_out.find(TRACK_STRING, 0) + TRACK_STRING.size();
-	while (found != std::string::npos) {
-		// A new track has been found
-		nb_tracks++;
-		track_info_t track;
-		track.num = parse(mkvinfo_out, TRACK_NUMBER_STRING, &found);
-		track.type = parse(mkvinfo_out, TRACK_TYPE_STRING, &found);
-		track.codec = parse(mkvinfo_out, CODEC_ID_STRING, &found);
-		//		if (track.type != "video")
-		//			track.language = parse(mkvinfo_out, LANGUAGE_STRING, &found);
-		tracks.push_back(track);
-
-		found = mkvinfo_out.find(TRACK_STRING, found + 1);
-	}
-	std::cout << "Number of tracks = " << nb_tracks << std::endl;
-
-
-
-	for (std::vector<track_info_t>::iterator i = tracks.begin(); i
-			!= tracks.end(); i++) {
-		std::cout << i->num << " : ";
-		std::cout << i->type << " : ";
-		//		if (i->type != "video")
-		//			std::cout << i->language << " : ";
-		std::cout << i->codec << std::endl;
-	}
-
-	std::vector<int> tracks_to_extract = askUserForTrackNumberToExtract();
-	cleanTrackNumberList(tracks_to_extract, nb_tracks);
-
-	// Creation of the command line to use for extraction
+    std::vector<int> tracks_to_extract = askUserForTrackNumberToExtract();
+	cleanTrackNumberList(tracks_to_extract, tracks.size());
 
 	if (tracks_to_extract.size() != 0) {
-		std::string cmdline_extraction("mkvextract tracks " + mkvfilename);
-		for (int i = 0; i < tracks_to_extract.size(); i++) {
-			cmdline_extraction += " " + toString(tracks_to_extract.at(i)) + ":Track" + toString(tracks_to_extract.at(i));
-		}
-		std::cout << "Running command line : " + cmdline_extraction << std::endl;
-		system(cmdline_extraction.c_str());
+		extractTracks(mkvfilename, tracks_to_extract);
 	} else {
 		std::cout << "No track to extract" << std::endl;
 	}
