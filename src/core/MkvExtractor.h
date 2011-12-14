@@ -39,6 +39,7 @@ typedef struct track_info_t{
 
 class MkvExtractor {
 public:
+	MkvExtractor(){};
 	MkvExtractor(std::string filePath);
 	std::vector<track_info_t> getTracksInfos() {
 		return tracks_infos;
@@ -52,6 +53,7 @@ private:
 	int getNumberOfTracks(std::string raw_infos);
 	std::vector<track_info_t> parseTracksInfos(std::string raw_infos);
 	std::string makeExtractCommandLine(const std::vector<int>& tracks_to_extract);
+
 };
 
 std::string toString(int number);
