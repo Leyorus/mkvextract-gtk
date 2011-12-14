@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include <pthread.h>
+#include <gtkmm/filefilter.h>
 
 using namespace std;
 
@@ -22,7 +23,10 @@ MainWindow::MainWindow() :
 
 	inputFrame.add(inputFileButton);
 	mainVBox.pack_start(inputFrame, Gtk::PACK_SHRINK);
-
+	Gtk::FileFilter mkvFileNameFilter;
+	mkvFileNameFilter.set_name("MKV Files");
+	mkvFileNameFilter.add_mime_type("video/x-matroska");
+	inputFileButton.add_filter(mkvFileNameFilter);
 	inputFileButton.signal_file_set().connect(sigc::mem_fun(this, &MainWindow::fileSet));
 
 	outputFrame.add(outputFileButton);
