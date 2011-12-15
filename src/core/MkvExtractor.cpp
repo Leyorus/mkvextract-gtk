@@ -28,8 +28,6 @@ along with this program. If not, see  <http://www.gnu.org/licenses/>.
 #include <unistd.h>
 #include <map>
 
-
-
 MkvExtractor::MkvExtractor(std::string filePath) {
 	this->filePath = filePath;
 
@@ -56,8 +54,8 @@ int toInteger(const std::string &str) {
 	return n;
 }
 
-std::string exec(const char* cmd) {
-    FILE* pipe = popen(cmd, "r");
+std::string exec(std::string cmd) {
+    FILE* pipe = popen(cmd.c_str(), "r");
     if (!pipe) return "ERROR";
     char buffer[128];
     std::string result = "";
@@ -120,16 +118,30 @@ int extractNumberOfTracks(std::string raw_infos) {
     return numberOfTracks;
 }
 
-std::vector<std::string> MkvExtractor::makeExtractCommandLineArgs(std::map<int, std::string> tracks_to_extract) {
-	// Creation of the command line to use for extraction
+std::vector<std::string> MkvExtractor::makeExtractCommandLine(std::map<int, std::string> tracks_to_extract, bool usable) {
 	std::vector<std::string> ret;
 	ret.push_back("mkvextract");
 	ret.push_back("tracks");
-	ret.push_back(filePath);
+	if(usable) {
+		ret.push_back("\"" + filePath + "\"");
+	} else {
+		ret.push_back(filePath);
+	}
     for(std::map<int, std::string>::iterator i = tracks_to_extract.begin(); i != tracks_to_extract.end();i++){
-        ret.push_back(toString(i->first) + ":" + i->second);
+        ret.push_back(toString(i->first) + ":" + "\""+ i->second + "\"");
     }
     return ret;
+}
+
+std::string MkvExtractor::getExtractCommandLine(std::map<int, std::string> tracks_to_extract) {
+	std::vector<std::string> cmd = makeExtractCommandLine(tracks_to_extract, true);
+	std::string ret = "";
+
+	for (int i=0; i < (cmd.size()-1) ; i++) {
+		ret += cmd.at(i) + " ";
+	}
+	ret += cmd.at(cmd.size()-1);
+	return ret;
 }
 
 std::vector<int> fixTrackNumberList(std::vector<int> tracks_to_extract, int trueNumberOfTrack) {
@@ -169,24 +181,18 @@ std::string MkvExtractor::getDefaultFileName (track_info_t info){
 
 void MkvExtractor::extractTracks(const std::map<int, std::string> tracks_to_extract) {
 	if (tracks_to_extract.size() != 0) {
-		std::vector<std::string> cmdline_extractionArgs = makeExtractCommandLineArgs(tracks_to_extract);
-
-		std::cout << "Running command : ";
-		for (std::vector<std::string>::iterator i=cmdline_extractionArgs.begin(); i!= cmdline_extractionArgs.end(); i++) {
-			std::cout << " " << *i;
-		}
-		std::cout << std::endl;
+		std::vector<std::string> cmdline = makeExtractCommandLine(tracks_to_extract, false);
 
 	    int i;
 	    char **argv = new char*[tracks_to_extract.size()+1];
 	    std::vector<std::string>::iterator it;
-	    for(i = 0, it = cmdline_extractionArgs.begin(); it != cmdline_extractionArgs.end(); ++it, ++i)
+	    for(i = 0, it = cmdline.begin(); it != cmdline.end(); ++it, ++i)
 	    {
 	       argv[i] = const_cast<char*>((*it).c_str());
 	    }
 	    argv[i] = 0;
 
-	    execvp("mkvextract", argv);
+	    execvp(argv[0], argv);
 	    delete[] argv;
 
 	} else {

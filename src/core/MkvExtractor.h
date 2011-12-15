@@ -46,6 +46,7 @@ public:
 		return tracks_infos;
 	}
 	void extractTracks(const std::map<int, std::string> tracks_to_extract);
+	std::string getExtractCommandLine(std::map<int, std::string> tracks_to_extract);
 	std::string getDefaultFileName (track_info_t info);
 
 private:
@@ -54,15 +55,14 @@ private:
 	std::string getRawMkvInfo(std::string filePath);
 	int getNumberOfTracks(std::string raw_infos);
 	std::vector<track_info_t> parseTracksInfos(std::string raw_infos);
-//	std::string makeExtractCommandLineArgs(const std::vector<int>& tracks_to_extract);
-	std::vector<std::string> makeExtractCommandLineArgs(std::map<int, std::string> tracks_to_extract);
+	std::vector<std::string> makeExtractCommandLine(std::map<int, std::string> tracks_to_extract, bool usable);
 
 };
 
 std::string toString(int number);
 int toInteger(const std::string &str);
 
-std::string exec(const char* cmd);
+std::string exec(std::string cmd);
 
 std::string substring_toend(std::string& s, int n_pos);
 
