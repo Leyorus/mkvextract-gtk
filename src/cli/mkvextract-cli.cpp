@@ -76,9 +76,15 @@ int main(int argc, char *argv[])
 	std::vector<track_info_t> tracks = mkv.getTracksInfos();
 	printTracksInfos(tracks);
 
-	std::vector<int> tracks_to_extract = askUserForTrackNumberToExtract();
+	std::vector<int> userTracks = askUserForTrackNumberToExtract();
 
-	mkv.extractTracks(tracks_to_extract);
+	std::map<int, std::string> toExtract;
+
+	for (std::vector<int>::iterator i = userTracks.begin(); i	!= userTracks.end(); i++) {
+		toExtract[*i] = mkv.getDefaultFileName(tracks.at(*i-1));
+	}
+
+	mkv.extractTracks(toExtract);
 
 	return 0;
 }

@@ -21,6 +21,7 @@ along with this program. If not, see  <http://www.gnu.org/licenses/>.
 
 #include <vector>
 #include <string>
+#include <map>
 
 
 typedef struct track_info_t{
@@ -44,7 +45,8 @@ public:
 	std::vector<track_info_t> getTracksInfos() {
 		return tracks_infos;
 	}
-	void extractTracks(const std::vector<int> tracks_to_extract);
+	void extractTracks(const std::map<int, std::string> tracks_to_extract);
+	std::string getDefaultFileName (track_info_t info);
 
 private:
 	std::string filePath;
@@ -52,7 +54,8 @@ private:
 	std::string getRawMkvInfo(std::string filePath);
 	int getNumberOfTracks(std::string raw_infos);
 	std::vector<track_info_t> parseTracksInfos(std::string raw_infos);
-	std::string makeExtractCommandLine(const std::vector<int>& tracks_to_extract);
+//	std::string makeExtractCommandLineArgs(const std::vector<int>& tracks_to_extract);
+	std::vector<std::string> makeExtractCommandLineArgs(std::map<int, std::string> tracks_to_extract);
 
 };
 
@@ -64,8 +67,6 @@ std::string exec(const char* cmd);
 std::string substring_toend(std::string& s, int n_pos);
 
 std::string parse(std::string& s, int track_number, std::string key);
-
-std::string fixedFileName(std::string filename);
 
 std::vector<track_info_t> parseTracksInfos(std::string & mkvinfo_out);
 

@@ -49,6 +49,12 @@ public:
 	std::map<int,bool> getUserSelection() {return this->tracksToExtract;}
 	bool isExtracting();
 	void setIsExtracting(bool isExtracting);
+	void setExtractionProcessPID(int PID) { extractionProcess_pid = PID;};
+	int getExtractionProcessPID() { return extractionProcess_pid;};
+	std::vector<track_info_t> tracks;
+	std::string getFileName(int id);
+	std::string getOutputFolder() { return outputFileButton.get_current_folder();};
+	bool onTimeOut();
 private:
 	Gtk::Window window;
 	Gtk::VBox mainVBox;
@@ -63,17 +69,23 @@ private:
 	Gtk::Button extractButton;
 
 	MkvExtractor mkvExtractor;
-	std::vector<track_info_t> tracks;
 	std::map<int,bool> tracksToExtract;
 
 	bool extracting;
 	pthread_mutex_t isExtracting_mutex;
 	pthread_t extraction_thread;
+	pid_t extractionProcess_pid;
 
-	void fileSet();
+	bool fileChoosen;
+	bool trackSelected;
+
+	void stopExtraction();
+    void fileSet();
 	void printTracksInfos(std::vector<track_info_t> & tracks);
-	void onEditingStarted(Glib::ustring path);
-	void onExtract();
+	void onCheckboxClicked(Glib::ustring path);
+	void onExtractButton();
+	bool onCloseButton(GdkEventAny * ev);
+	bool isATrackSelected();
 };
 
 #endif

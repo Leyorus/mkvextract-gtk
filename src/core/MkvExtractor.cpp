@@ -25,11 +25,14 @@ along with this program. If not, see  <http://www.gnu.org/licenses/>.
 #include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <map>
 
 
 
 MkvExtractor::MkvExtractor(std::string filePath) {
-	this->filePath = fixedFileName(filePath);
+	this->filePath = filePath;
+
     std::string mkvinfo_out = getRawMkvInfo(filePath);
 	this->tracks_infos = parseTracksInfos(mkvinfo_out);
 }
@@ -107,10 +110,6 @@ std::string parse(std::string& s, int track_number, std::string key) {
 	return "unknown";
 }
 
-std::string fixedFileName(std::string filename) {
-	return "\"" + filename + "\"";
-}
-
 int extractNumberOfTracks(std::string raw_infos) {
 	int numberOfTracks = 0;
     int found = raw_infos.find(TRACK_STRING, 0) + TRACK_STRING.size();
@@ -121,13 +120,16 @@ int extractNumberOfTracks(std::string raw_infos) {
     return numberOfTracks;
 }
 
-std::string MkvExtractor::makeExtractCommandLine(const std::vector<int>& tracks_to_extract) {
+std::vector<std::string> MkvExtractor::makeExtractCommandLineArgs(std::map<int, std::string> tracks_to_extract) {
 	// Creation of the command line to use for extraction
-    std::string cmdline_extraction("mkvextract tracks " + this->filePath);
-    for(int i = 0;i < tracks_to_extract.size();i++){
-        cmdline_extraction += " " + toString(tracks_to_extract.at(i)) + ":Track" + toString(tracks_to_extract.at(i)) + "_" + this->tracks_infos.at(tracks_to_extract.at(i)-1).language;
+	std::vector<std::string> ret;
+	ret.push_back("mkvextract");
+	ret.push_back("tracks");
+	ret.push_back(filePath);
+    for(std::map<int, std::string>::iterator i = tracks_to_extract.begin(); i != tracks_to_extract.end();i++){
+        ret.push_back(toString(i->first) + ":" + i->second);
     }
-    return cmdline_extraction;
+    return ret;
 }
 
 std::vector<int> fixTrackNumberList(std::vector<int> tracks_to_extract, int trueNumberOfTrack) {
@@ -161,19 +163,39 @@ std::vector<track_info_t> MkvExtractor::parseTracksInfos(std::string raw_infos) 
     return tracks;
 }
 
-void MkvExtractor::extractTracks(const std::vector<int> tracks_to_extract) {
-	std::vector<int> fixed_tracks_to_extract = fixTrackNumberList(tracks_to_extract, this->tracks_infos.size());
-	if (fixed_tracks_to_extract.size() != 0) {
-		std::string cmdline_extraction = makeExtractCommandLine(fixed_tracks_to_extract);
-	    std::cout << "Running command line : " + cmdline_extraction << std::endl;
-	    system(cmdline_extraction.c_str());
+std::string MkvExtractor::getDefaultFileName (track_info_t info){
+	return "Track" + info.num + "_" + info.language;
+}
+
+void MkvExtractor::extractTracks(const std::map<int, std::string> tracks_to_extract) {
+	if (tracks_to_extract.size() != 0) {
+		std::vector<std::string> cmdline_extractionArgs = makeExtractCommandLineArgs(tracks_to_extract);
+
+		std::cout << "Running command : ";
+		for (std::vector<std::string>::iterator i=cmdline_extractionArgs.begin(); i!= cmdline_extractionArgs.end(); i++) {
+			std::cout << " " << *i;
+		}
+		std::cout << std::endl;
+
+	    int i;
+	    char **argv = new char*[tracks_to_extract.size()+1];
+	    std::vector<std::string>::iterator it;
+	    for(i = 0, it = cmdline_extractionArgs.begin(); it != cmdline_extractionArgs.end(); ++it, ++i)
+	    {
+	       argv[i] = const_cast<char*>((*it).c_str());
+	    }
+	    argv[i] = 0;
+
+	    execvp("mkvextract", argv);
+	    delete[] argv;
+
 	} else {
 		std::cout << "No track to extract" << std::endl;
 	}
 }
 
 std::string MkvExtractor::getRawMkvInfo(std::string filePath) {
-	std::string cmdline("mkvinfo " + fixedFileName(filePath));
+	std::string cmdline("mkvinfo \"" + filePath + "\"");
 	return exec(cmdline.c_str());
 }
 
