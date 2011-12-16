@@ -33,6 +33,7 @@ along with this program. If not, see  <http://www.gnu.org/licenses/>.
 #include <gtkmm/listviewtext.h>
 #include <gtkmm/treeview.h>
 #include <gtkmm/liststore.h>
+#include <gtkmm/progressbar.h>
 
 #include <MkvExtractor.h>
 #include <string>
@@ -74,6 +75,9 @@ public:
 	std::string getFileName(int id);
 	std::string getOutputFolder() { return outputFileButton.get_current_folder();};
 	bool onTimeOut();
+	void setProgressPercentage(unsigned int percentage) {
+		this->progress_percentage = percentage;
+	}
 private:
 	Gtk::Window window;
 	Gtk::VBox mainVBox;
@@ -85,6 +89,7 @@ private:
 	ModelColumns m_Columns;
 	Glib::RefPtr<Gtk::ListStore> refListStore;
 	Gtk::TreeView trackList;
+	Gtk::ProgressBar progressBar;
 	Gtk::Button extractButton;
 
 	MkvExtractor mkvExtractor;
@@ -97,6 +102,7 @@ private:
 
 	bool fileChoosen;
 	bool trackSelected;
+	int progress_percentage;
 
 	void stopExtraction();
     void fileSet();

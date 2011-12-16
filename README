@@ -1,0 +1,18 @@
+
+COMPILATION:
+------------
+
+Cmake utility is required to compile this program.
+
+To install it on ubuntu, run the following command:
+	$ sudo apt-get install cmake
+
+When installed, start by creating a directory for building :
+	$ mkdir build_dir
+	$ cd build_dir
+	$ cmake /path_to_source_folder
+	
+Finally, to compile, just run :
+	$ make mkvextract-gtk
+
+The executable can be found here : build_dir/src/gui/mkvextract-gtk

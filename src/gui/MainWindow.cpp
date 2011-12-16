@@ -82,8 +82,8 @@ MainWindow::MainWindow() :
 	trackList.append_column_editable("Output filename", m_Columns.m_col_outputFileName);
 
 	extractButton.signal_clicked().connect(sigc::mem_fun(this, &MainWindow::onExtractButton));
-//	extractButton.signal_button_press_event().connect(sigc::mem_fun(this, &MainWindow::onExtract));
 
+	mainVBox.pack_start(progressBar, Gtk::PACK_SHRINK);
 	mainVBox.pack_start(extractButton, Gtk::PACK_SHRINK);
 
 	this->add(mainVBox);
@@ -160,9 +160,10 @@ bool getLine(int fd, std::string &str) {
 	str = "";
 
 	while (read(fd, &buffer, sizeof(buffer)) > 0) {
-		if (buffer == '\r')
+		// the file is not finished
+		if (buffer == '\r') { // replace '\r' char by '\n'
 			buffer = '\n';
-		// on a pas fini le fichier
+		}
 		str += buffer;
 		if (buffer == '\n') {
 			break;
@@ -173,38 +174,42 @@ bool getLine(int fd, std::string &str) {
 
 void* extractionThread_fun(void* args) {
 	MainWindow *win = (MainWindow*) args;
-//	std::vector<int> toExtract;
 	std::map<int, std::string> toExtract;
 	std::map<int,bool> tracksToExtract = win->getUserSelection();
+	for (std::map<int, bool>::iterator i = tracksToExtract.begin(); i != tracksToExtract.end(); i++) {
+		if (i->second) {
+			toExtract[i->first] = win->getOutputFolder() + "/" + win->getFileName(i->first);
+		}
+	}
 
 	int master;
-
 	win->setExtractionProcessPID(forkpty(&master, NULL, NULL, NULL));
 	if (win->getExtractionProcessPID() == 0) { // child process
 		close(master);
-		for (std::map<int, bool>::iterator i = tracksToExtract.begin(); i != tracksToExtract.end(); i++) {
-			if (i->second) {
-				toExtract[i->first] = win->getOutputFolder() + "/" + win->getFileName(i->first);
-			}
-		}
+
 		win->getMkvExtractor().extractTracks(toExtract);
 
 	} else { // parent process
-
 		win->setIsExtracting(true);
+		std::cout << "Command line used : "<< std::endl;
+		std::cout << "-------------------- "<< std::endl;
+		std::cout << win->getMkvExtractor().getExtractCommandLine(toExtract) << std::endl;
 
 		std::string str;
 		while (getLine(master, str)) {
-			std::cout << "Extraction output = " << str;
-		}
+			int progress = 0;
+			int ret = sscanf(str.c_str(), "%*[^:] : %d", &progress);
 
-//		pid_t tpid;
-//		int status;
-//		do {
-//			tpid = wait(&status);
-//		} while (tpid != win->getExtractionProcessPID());
+			if (ret > 0) {
+				win->setProgressPercentage(progress);
+			} else {
+//				std::cout << str;
+			}
+
+		}
 		win->setIsExtracting(false);
 	}
+	return 0;
 }
 
 std::string MainWindow::getFileName(int id) {
@@ -222,6 +227,8 @@ void MainWindow::stopExtraction()
 }
 
 bool MainWindow::onTimeOut() {
+	progressBar.set_fraction((double)progress_percentage / 100.0);
+	progressBar.set_text(toString(progress_percentage)+ "%");
 	if (!isExtracting()) {
 		extractButton.set_label("Extract");
 		return false;
@@ -234,22 +241,16 @@ void MainWindow::onExtractButton() {
 	if (!isExtracting()) {
 		if (isATrackSelected()) {
 			extractButton.set_label("Cancel");
-
-			// Creation of a new object prevents long lines and shows us a little
-			  // how slots work.  We have 0 parameters and bool as a return value
-			  // after calling sigc::bind.
-//			  sigc::slot<bool> my_slot = sigc::bind(sigc::mem_fun(*this, &MainWindow::onTimeOut), 0);
-
-			  // This is where we connect the slot to the Glib::signal_timeout()
-			  sigc::connection conn = Glib::signal_timeout().connect(sigc::mem_fun(*this, &MainWindow::onTimeOut), 500);
-
+			sigc::connection conn = Glib::signal_timeout().connect(sigc::mem_fun(*this, &MainWindow::onTimeOut), 500);
 			pthread_create(&extraction_thread, 0, &extractionThread_fun, (void*) this);
 		}
 	} else {
 		stopExtraction();
 		extractButton.set_label("Extract");
 	}
-
+	progress_percentage = 0;
+	progressBar.set_fraction((double)progress_percentage / 100.0);
+	progressBar.set_text(toString(progress_percentage)+ "%");
 }
 
 bool MainWindow::onCloseButton(GdkEventAny * ev) {

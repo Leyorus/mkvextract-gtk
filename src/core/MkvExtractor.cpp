@@ -54,7 +54,7 @@ int toInteger(const std::string &str) {
 	return n;
 }
 
-std::string exec(std::string cmd) {
+std::string MkvExtractor::exec(std::string cmd) {
     FILE* pipe = popen(cmd.c_str(), "r");
     if (!pipe) return "ERROR";
     char buffer[128];
@@ -67,15 +67,15 @@ std::string exec(std::string cmd) {
     return result;
 }
 
-std::string substring_toend(std::string& s, int from) {
+std::string MkvExtractor::substring_toend(std::string& s, int from) {
 	int end_of_line = s.find("\n", from);
 	return s.substr(from, end_of_line - from);
 }
 
-std::string parse(std::string& s, int track_number, std::string key) {
-	int current_track_number = 0;
-	int current_track_pos = 0;
-	int key_pos;
+std::string MkvExtractor::parse(std::string& s, unsigned int track_number, std::string key) {
+	unsigned int current_track_number = 0;
+	size_t current_track_pos = 0;
+	size_t key_pos;
 
 	//looking for asked track position
 	do {
@@ -88,7 +88,7 @@ std::string parse(std::string& s, int track_number, std::string key) {
 	} while (current_track_number != track_number);
 
 	// looking for the next track (if there is any)
-	int next_track_pos = s.find(TRACK_NUMBER_STRING, current_track_pos);
+	size_t next_track_pos = s.find(TRACK_NUMBER_STRING, current_track_pos);
 
 	if (next_track_pos != std::string::npos) {
 		key_pos = s.find(key, current_track_pos) + key.size();
@@ -109,8 +109,8 @@ std::string parse(std::string& s, int track_number, std::string key) {
 }
 
 int extractNumberOfTracks(std::string raw_infos) {
-	int numberOfTracks = 0;
-    int found = raw_infos.find(TRACK_STRING, 0) + TRACK_STRING.size();
+	unsigned int numberOfTracks = 0;
+	size_t found = raw_infos.find(TRACK_STRING, 0) + TRACK_STRING.size();
     while(found != std::string::npos){
         numberOfTracks++;
         found = raw_infos.find(TRACK_STRING, found + 1);
@@ -124,12 +124,15 @@ std::vector<std::string> MkvExtractor::makeExtractCommandLine(std::map<int, std:
 	ret.push_back("tracks");
 	if(usable) {
 		ret.push_back("\"" + filePath + "\"");
+	    for(std::map<int, std::string>::iterator i = tracks_to_extract.begin(); i != tracks_to_extract.end();i++){
+	        ret.push_back(toString(i->first) + ":" + "\""+ i->second + "\"");
+	    }
 	} else {
 		ret.push_back(filePath);
+	    for(std::map<int, std::string>::iterator i = tracks_to_extract.begin(); i != tracks_to_extract.end();i++){
+	        ret.push_back(toString(i->first) + ":" + i->second);
+	    }
 	}
-    for(std::map<int, std::string>::iterator i = tracks_to_extract.begin(); i != tracks_to_extract.end();i++){
-        ret.push_back(toString(i->first) + ":" + "\""+ i->second + "\"");
-    }
     return ret;
 }
 
@@ -141,22 +144,6 @@ std::string MkvExtractor::getExtractCommandLine(std::map<int, std::string> track
 		ret += cmd.at(i) + " ";
 	}
 	ret += cmd.at(cmd.size()-1);
-	return ret;
-}
-
-std::vector<int> fixTrackNumberList(std::vector<int> tracks_to_extract, int trueNumberOfTrack) {
-	// Clean bad track number
-	std::vector<int> ret = tracks_to_extract;
-	std::vector<int>::iterator i = ret.begin();
-	std::cout << "true number of track =" << trueNumberOfTrack << std::endl;
-	while( i != ret.end()) {
-		if (*i <= 0 || *i > trueNumberOfTrack) {
-			std::cout << "Track number " << *i << " is out of range. Removing it from extraction list..." << std::endl;
-			ret.erase(i);
-		} else {
-			i++;
-		}
-	}
 	return ret;
 }
 

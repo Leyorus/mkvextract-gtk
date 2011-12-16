@@ -57,17 +57,12 @@ private:
 	std::vector<track_info_t> parseTracksInfos(std::string raw_infos);
 	std::vector<std::string> makeExtractCommandLine(std::map<int, std::string> tracks_to_extract, bool usable);
 
+	static std::string substring_toend(std::string& s, int n_pos);
+	static std::string parse(std::string& s, unsigned int track_number, std::string key);
+	std::string exec(std::string cmd);
 };
 
 std::string toString(int number);
 int toInteger(const std::string &str);
 
-std::string exec(std::string cmd);
 
-std::string substring_toend(std::string& s, int n_pos);
-
-std::string parse(std::string& s, int track_number, std::string key);
-
-std::vector<track_info_t> parseTracksInfos(std::string & mkvinfo_out);
-
-std::vector<track_info_t> getMkvTracksInfos(std::string & mkvfilename);
