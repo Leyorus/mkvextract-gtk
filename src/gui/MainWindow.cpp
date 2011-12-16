@@ -1,4 +1,23 @@
+/*
+===========================================================================
 
+mkvextract-gtk
+Copyright (C) 2011 Leyorus <leyorus@gmail.com>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see  <http://www.gnu.org/licenses/>.
+===========================================================================
+*/
 
 #include "MainWindow.h"
 #include <iostream>
@@ -7,6 +26,8 @@
 #include <gtkmm/filefilter.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+
+#include <pty.h>
 
 using namespace std;
 
@@ -74,8 +95,8 @@ MainWindow::MainWindow() :
 	extracting = false;
 	pthread_mutex_init(&isExtracting_mutex, 0);
 
-	bool fileChoosen = false;
-	bool trackSelected = false;
+	fileChoosen = false;
+	trackSelected = false;
 }
 
 void MainWindow::printTracksInfos(std::vector<track_info_t> & tracks) {
@@ -133,31 +154,55 @@ void MainWindow::setIsExtracting(bool isExtracting) {
 	pthread_mutex_unlock(&this->isExtracting_mutex);
 }
 
+// return true if something to return
+bool getLine(int fd, std::string &str) {
+	char buffer;
+	str = "";
+
+	while (read(fd, &buffer, sizeof(buffer)) > 0) {
+		if (buffer == '\r')
+			buffer = '\n';
+		// on a pas fini le fichier
+		str += buffer;
+		if (buffer == '\n') {
+			break;
+		}
+	}
+	return str.size() != 0;
+}
+
 void* extractionThread_fun(void* args) {
 	MainWindow *win = (MainWindow*) args;
 //	std::vector<int> toExtract;
 	std::map<int, std::string> toExtract;
 	std::map<int,bool> tracksToExtract = win->getUserSelection();
 
-	win->setExtractionProcessPID(fork());
-	if (win->getExtractionProcessPID() == 0) { // child process
+	int master;
 
+	win->setExtractionProcessPID(forkpty(&master, NULL, NULL, NULL));
+	if (win->getExtractionProcessPID() == 0) { // child process
+		close(master);
 		for (std::map<int, bool>::iterator i = tracksToExtract.begin(); i != tracksToExtract.end(); i++) {
 			if (i->second) {
 				toExtract[i->first] = win->getOutputFolder() + "/" + win->getFileName(i->first);
 			}
 		}
-
 		win->getMkvExtractor().extractTracks(toExtract);
-		std::cout<< "end child process"<< std::endl;
-	}
-	else { // parent process
+
+	} else { // parent process
+
 		win->setIsExtracting(true);
-		pid_t tpid;
-		int status;
-		do {
-			tpid = wait(&status);
-		} while (tpid != win->getExtractionProcessPID());
+
+		std::string str;
+		while (getLine(master, str)) {
+			std::cout << "Extraction output = " << str;
+		}
+
+//		pid_t tpid;
+//		int status;
+//		do {
+//			tpid = wait(&status);
+//		} while (tpid != win->getExtractionProcessPID());
 		win->setIsExtracting(false);
 	}
 }

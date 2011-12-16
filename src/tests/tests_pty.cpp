@@ -260,12 +260,10 @@ int my_posix_pty() {
 
 int my_posix_pty2() {
 	int master;
-	char input[150];
 
 	// Création d'un processus fils
 	if (forkpty(&master, NULL, NULL, NULL)) {
 		// Code du processus pere
-		// Fermeture de la partie esclave du PTY
 		std::string str;
 		while (getLine(master, str)) {
 			std::cout << str;

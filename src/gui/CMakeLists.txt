@@ -18,4 +18,5 @@ add_executable(
 target_link_libraries(
 	mkvextract-gtk
 	mkvextract_core
+	util # for forkpty()
 	${GTKMM_LIBRARIES})
