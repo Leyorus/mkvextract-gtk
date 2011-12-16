@@ -17,5 +17,3 @@ target_link_libraries(
 	${GTKMM_LIBRARIES}
 	util # usefull for forkpty() function
 	)
-
-# add_subdirectory(tests)
