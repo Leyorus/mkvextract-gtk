@@ -28,11 +28,42 @@ along with this program. If not, see  <http://www.gnu.org/licenses/>.
 #include <unistd.h>
 #include <map>
 
+
 MkvExtractor::MkvExtractor(std::string filePath) {
 	this->filePath = filePath;
-
+	this->fileExtensionsMap = createFileExtensionsMap();
     std::string mkvinfo_out = getRawMkvInfo(filePath);
 	this->tracks_infos = parseTracksInfos(mkvinfo_out);
+}
+
+std::map<std::string, std::string> MkvExtractor::createFileExtensionsMap() {
+	std::map<std::string, std::string> m;
+	m["V_MPEG1"] = "mpg";
+	m["A_AAC"] = "aac";
+	m["A_AC3"] = "ac3";
+	m["A_DTS"] = "dts";
+	m["A_FLAC"] = "flac";
+	m["A_APE"] = "ape";
+	m["A_QUICKTIME"] = "qdm";
+	m["A_TTA1"] = "tta";
+	m["A_WAVPACK4"] = "wv";
+	m["A_VORBIS"] = "ogg";
+	m["A_REAL"] = "ra";
+	m["V_MPEG2"] = "mpg";
+	m["V_REAL"] = "rmvb";
+	m["V_MS/VFW/FOURCC"] = "avi";
+	m["V_MPEG4/ISO/AVC"] = "h264";
+	m["S_VOBSUB"] = "sub";
+	m["A_MPEG/L3"] = "mp3";
+	m["A_MPEG/L2"] = "mp2";
+	m["A_MPEG/L1"] = "mpa";
+	m["A_PCM/INT/LIT"] = "wav";
+	m["S_HDMV/PGS"] = "sup";
+	m["S_TEXT/UTF8"] = "srt";
+	m["S_TEXT/SSA"] = "ssa";
+	m["S_TEXT/ASS"] = "ass";
+	m["S_TEXT/USF"] = "usf";
+	return m;
 }
 
 const std::string TRACK_STRING = "A track";
@@ -163,7 +194,17 @@ std::vector<track_info_t> MkvExtractor::parseTracksInfos(std::string raw_infos) 
 }
 
 std::string MkvExtractor::getDefaultFileName (track_info_t info){
-	return "Track" + info.num + "_" + info.language;
+	return "Track" + info.num + "_" + info.language + getDefaultFileNameExtension(info);
+}
+
+std::string MkvExtractor::getDefaultFileNameExtension(track_info_t info) {
+	std::map<std::string, std::string>::iterator it;
+	it = this->fileExtensionsMap.find(info.codec);
+	if (it != this->fileExtensionsMap.end()) {
+		return "." + it->second;
+	} else {
+		return "";
+	}
 }
 
 void MkvExtractor::extractTracks(const std::map<int, std::string> tracks_to_extract) {

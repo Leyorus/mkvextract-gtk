@@ -56,6 +56,9 @@ private:
 	int getNumberOfTracks(std::string raw_infos);
 	std::vector<track_info_t> parseTracksInfos(std::string raw_infos);
 	std::vector<std::string> makeExtractCommandLine(std::map<int, std::string> tracks_to_extract, bool usable);
+	std::map<std::string, std::string> fileExtensionsMap;
+	static std::map<std::string, std::string> createFileExtensionsMap();
+	std::string getDefaultFileNameExtension(track_info_t info);
 
 	static std::string substring_toend(std::string& s, int n_pos);
 	static std::string parse(std::string& s, unsigned int track_number, std::string key);
