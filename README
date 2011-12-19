@@ -15,4 +15,4 @@ When installed, start by creating a directory for building :
 Finally, to compile, just run :
 	$ make mkvextract-gtk
 
-The executable can be found here : build_dir/src/gui/mkvextract-gtk
+The executable can be found here : build_dir/src/mkvextract-gtk
