@@ -26,6 +26,7 @@ along with this program. If not, see  <http://www.gnu.org/licenses/>.
 #include <gtkmm/filefilter.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <gtkmm/image.h>
 
 #include <pty.h>
 
@@ -40,12 +41,12 @@ MainWindow::MainWindow() :
 			outputFileButton(Gtk::FILE_CHOOSER_ACTION_SELECT_FOLDER),
 			contentFrame(""),
 			extractOrPauseButton("Extract"),
-			cancelButton("Cancel")
+			cancelButton(Gtk::Stock::CANCEL)
 {
 	this->set_title("MkvExtract-Gtk");
 	this->signal_delete_event().connect(sigc::mem_fun(this, &MainWindow::onCloseButton));
 	this->set_border_width(10);
-
+	extractOrPauseButton.set_image(*Gtk::manage (new Gtk::Image (Gtk::Stock::CONVERT, Gtk::ICON_SIZE_BUTTON)));
 	inputFrame.add(inputFileButton);
 	inputFileButton.set_border_width(5);
 	outputFileButton.set_border_width(5);
@@ -239,11 +240,13 @@ void MainWindow::pauseExtraction()
 {
     kill(this->extractionProcess_pid, SIGSTOP);
     setExtractionStatus(paused_status);
+    extractOrPauseButton.set_image(*Gtk::manage (new Gtk::Image (Gtk::Stock::MEDIA_PLAY, Gtk::ICON_SIZE_BUTTON)));
 	extractOrPauseButton.set_label("Continue");
 }
 
 void MainWindow::continueExtraction() {
 	extractOrPauseButton.set_label("Pause");
+	extractOrPauseButton.set_image(*Gtk::manage (new Gtk::Image (Gtk::Stock::MEDIA_PAUSE, Gtk::ICON_SIZE_BUTTON)));
     kill(this->extractionProcess_pid, SIGCONT);
     setExtractionStatus(extracting_status);
 	enableTimer();
@@ -252,6 +255,7 @@ void MainWindow::continueExtraction() {
 void MainWindow::startExtraction() {
 	extractOrPauseButton.set_label("Pause");
 	cancelButton.set_sensitive(true);
+	extractOrPauseButton.set_image(*Gtk::manage (new Gtk::Image (Gtk::Stock::MEDIA_PAUSE, Gtk::ICON_SIZE_BUTTON)));
 	pthread_create(&extraction_thread, 0, &extractionThread_fun, (void*) this);
 	enableTimer();
 }
@@ -285,7 +289,7 @@ void MainWindow::updateProgressBar() {
 void MainWindow::onExtractionEnd() {
 	extractOrPauseButton.set_label("Extract");
 	cancelButton.set_sensitive(false);
-
+	extractOrPauseButton.set_image(*Gtk::manage (new Gtk::Image (Gtk::Stock::CONVERT, Gtk::ICON_SIZE_BUTTON)));
 	progress_percentage = 0;
 	progressBar.set_fraction((double)progress_percentage / 100.0);
 	progressBar.set_text(toString(progress_percentage)+ "%");
