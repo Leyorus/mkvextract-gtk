@@ -39,9 +39,9 @@ MainWindow::MainWindow() :
 			outputFrame("Output folder"),
 			outputFileButton(Gtk::FILE_CHOOSER_ACTION_SELECT_FOLDER),
 			contentFrame(""),
-			extractButton("Extract")
+			extractOrPauseButton("Extract"),
+			cancelButton("Cancel")
 {
-
 	this->set_title("MkvExtract-Gtk");
 	this->signal_delete_event().connect(sigc::mem_fun(this, &MainWindow::onCloseButton));
 	this->set_border_width(10);
@@ -81,19 +81,27 @@ MainWindow::MainWindow() :
 	trackList.append_column("Language", m_Columns.m_col_language);
 	trackList.append_column_editable("Output filename", m_Columns.m_col_outputFileName);
 
-	extractButton.signal_clicked().connect(sigc::mem_fun(this, &MainWindow::onExtractButton));
+	extractOrPauseButton.signal_clicked().connect(sigc::mem_fun(this, &MainWindow::onExtractOrPauseButton));
+	cancelButton.signal_clicked().connect(sigc::mem_fun(this, &MainWindow::onCancelButton));
 
 	mainVBox.pack_start(progressBar, Gtk::PACK_SHRINK);
-	mainVBox.pack_start(extractButton, Gtk::PACK_SHRINK);
+	mainVBox.pack_start(hButtonBox, Gtk::PACK_SHRINK);
+
+	hButtonBox.set_layout(Gtk::BUTTONBOX_SPREAD);
+	hButtonBox.pack_start(extractOrPauseButton);
+	hButtonBox.pack_start(cancelButton);
 
 	this->add(mainVBox);
-	extractButton.set_can_focus(false);
-	extractButton.set_sensitive(false);
+	extractOrPauseButton.set_can_focus(false);
+	extractOrPauseButton.set_sensitive(false);
+
+	cancelButton.set_can_focus(false);
+	cancelButton.set_sensitive(false);
 
 	this->show_all();
 
-	extracting = false;
-	pthread_mutex_init(&isExtracting_mutex, 0);
+	current_state = stop_status;
+	pthread_mutex_init(&extraction_status_mutex, 0);
 
 	fileChoosen = false;
 	trackSelected = false;
@@ -124,10 +132,10 @@ void MainWindow::onCheckboxClicked(Glib::ustring str) {
 	Gtk::TreeModel::Row row = *(refListStore->get_iter(path));
 	tracksToExtract[row[m_Columns.m_col_id]] = !tracksToExtract[row[m_Columns.m_col_id]];
 	if (isATrackSelected()) {
-		extractButton.set_sensitive(true);
+		extractOrPauseButton.set_sensitive(true);
 	} else {
 		if(!this->isExtracting()) {
-			extractButton.set_sensitive(false);
+			extractOrPauseButton.set_sensitive(false);
 		}
 	}
 }
@@ -142,16 +150,16 @@ bool MainWindow::isATrackSelected() {
 }
 
 bool MainWindow::isExtracting() {
-	pthread_mutex_lock(&this->isExtracting_mutex);
-	bool ret = extracting;
-	pthread_mutex_unlock(&this->isExtracting_mutex);
+	pthread_mutex_lock(&this->extraction_status_mutex);
+	bool ret = (current_state == extracting_status);
+	pthread_mutex_unlock(&this->extraction_status_mutex);
 	return ret;
 }
 
-void MainWindow::setIsExtracting(bool isExtracting) {
-	pthread_mutex_lock(&this->isExtracting_mutex);
-	this->extracting = isExtracting;
-	pthread_mutex_unlock(&this->isExtracting_mutex);
+void MainWindow::setExtractionStatus(extraction_status_t newState) {
+	pthread_mutex_lock(&this->extraction_status_mutex);
+	this->current_state = newState;
+	pthread_mutex_unlock(&this->extraction_status_mutex);
 }
 
 // return true if something to return
@@ -190,7 +198,7 @@ void* extractionThread_fun(void* args) {
 		win->getMkvExtractor().extractTracks(toExtract);
 
 	} else { // parent process
-		win->setIsExtracting(true);
+		win->setExtractionStatus(extracting_status);
 		std::cout << "Command line used : "<< std::endl;
 		std::cout << "-------------------- "<< std::endl;
 		std::cout << win->getMkvExtractor().getExtractCommandLine(toExtract) << std::endl;
@@ -207,7 +215,7 @@ void* extractionThread_fun(void* args) {
 			}
 
 		}
-		win->setIsExtracting(false);
+		win->setExtractionStatus(stop_status);
 	}
 	return 0;
 }
@@ -223,34 +231,82 @@ std::string MainWindow::getFileName(int id) {
 void MainWindow::stopExtraction()
 {
     kill(this->extractionProcess_pid, SIGKILL);
-    setIsExtracting(false);
+    setExtractionStatus(stop_status);
+    onExtractionEnd();
+}
+
+void MainWindow::pauseExtraction()
+{
+    kill(this->extractionProcess_pid, SIGSTOP);
+    setExtractionStatus(paused_status);
+	extractOrPauseButton.set_label("Continue");
+}
+
+void MainWindow::continueExtraction() {
+	extractOrPauseButton.set_label("Pause");
+    kill(this->extractionProcess_pid, SIGCONT);
+    setExtractionStatus(extracting_status);
+	enableTimer();
+}
+
+void MainWindow::startExtraction() {
+	extractOrPauseButton.set_label("Pause");
+	cancelButton.set_sensitive(true);
+	pthread_create(&extraction_thread, 0, &extractionThread_fun, (void*) this);
+	enableTimer();
+}
+
+void MainWindow::enableTimer() {
+	sigc::connection con = Glib::signal_timeout().connect(sigc::mem_fun(*this, &MainWindow::onTimeOut), 500);
 }
 
 bool MainWindow::onTimeOut() {
-	progressBar.set_fraction((double)progress_percentage / 100.0);
-	progressBar.set_text(toString(progress_percentage)+ "%");
-	if (!isExtracting()) {
-		extractButton.set_label("Extract");
-		return false;
-	} else {
-		return true;
+	bool ret = true;
+	switch(current_state) {
+	case paused_status:
+		ret = false; // disconnect timer
+		break;
+	case extracting_status:
+		updateProgressBar(); // return true = continue timer
+		break;
+	case stop_status:
+		onExtractionEnd();
+		ret = false; // disconnect timer
+		break;
 	}
+	return ret;
 }
 
-void MainWindow::onExtractButton() {
-	if (!isExtracting()) {
-		if (isATrackSelected()) {
-			extractButton.set_label("Cancel");
-			sigc::connection conn = Glib::signal_timeout().connect(sigc::mem_fun(*this, &MainWindow::onTimeOut), 500);
-			pthread_create(&extraction_thread, 0, &extractionThread_fun, (void*) this);
-		}
-	} else {
-		stopExtraction();
-		extractButton.set_label("Extract");
-	}
+void MainWindow::updateProgressBar() {
+	progressBar.set_fraction((double)progress_percentage / 100.0);
+	progressBar.set_text(toString(progress_percentage)+ "%");
+}
+
+void MainWindow::onExtractionEnd() {
+	extractOrPauseButton.set_label("Extract");
+	cancelButton.set_sensitive(false);
+
 	progress_percentage = 0;
 	progressBar.set_fraction((double)progress_percentage / 100.0);
 	progressBar.set_text(toString(progress_percentage)+ "%");
+}
+
+void MainWindow::onExtractOrPauseButton() {
+	switch(current_state) {
+	case paused_status:
+		continueExtraction();
+		break;
+	case stop_status:
+		startExtraction();
+		break;
+	case extracting_status:
+		pauseExtraction();
+		break;
+	}
+}
+
+void MainWindow::onCancelButton() {
+	stopExtraction();
 }
 
 bool MainWindow::onCloseButton(GdkEventAny * ev) {

@@ -34,6 +34,7 @@ along with this program. If not, see  <http://www.gnu.org/licenses/>.
 #include <gtkmm/treeview.h>
 #include <gtkmm/liststore.h>
 #include <gtkmm/progressbar.h>
+#include <gtkmm/buttonbox.h>
 
 #include <MkvExtractor.h>
 #include <string>
@@ -41,6 +42,7 @@ along with this program. If not, see  <http://www.gnu.org/licenses/>.
 #include <map>
 #include <pthread.h>
 
+typedef enum {extracting_status, stop_status, paused_status} extraction_status_t;
 
 class ModelColumns: public Gtk::TreeModelColumnRecord {
 public:
@@ -68,7 +70,7 @@ public:
 	MkvExtractor getMkvExtractor(){ return this->mkvExtractor;}
 	std::map<int,bool> getUserSelection() {return this->tracksToExtract;}
 	bool isExtracting();
-	void setIsExtracting(bool isExtracting);
+	void setExtractionStatus(extraction_status_t newState);
 	void setExtractionProcessPID(int PID) { extractionProcess_pid = PID;};
 	int getExtractionProcessPID() { return extractionProcess_pid;};
 	std::vector<track_info_t> tracks;
@@ -90,13 +92,16 @@ private:
 	Glib::RefPtr<Gtk::ListStore> refListStore;
 	Gtk::TreeView trackList;
 	Gtk::ProgressBar progressBar;
-	Gtk::Button extractButton;
+	Gtk::HButtonBox hButtonBox;
+	Gtk::Button extractOrPauseButton;
+	Gtk::Button cancelButton;
 
 	MkvExtractor mkvExtractor;
 	std::map<int,bool> tracksToExtract;
 
-	bool extracting;
-	pthread_mutex_t isExtracting_mutex;
+	extraction_status_t current_state;
+//	bool extracting;
+	pthread_mutex_t extraction_status_mutex;
 	pthread_t extraction_thread;
 	pid_t extractionProcess_pid;
 
@@ -104,11 +109,18 @@ private:
 	bool trackSelected;
 	int progress_percentage;
 
+	void startExtraction();
 	void stopExtraction();
+	void pauseExtraction();
+	void continueExtraction();
+	void enableTimer();
     void fileSet();
 	void printTracksInfos(std::vector<track_info_t> & tracks);
+	void updateProgressBar();
+	void onExtractionEnd();
 	void onCheckboxClicked(Glib::ustring path);
-	void onExtractButton();
+	void onExtractOrPauseButton();
+	void onCancelButton();
 	bool onCloseButton(GdkEventAny * ev);
 	bool isATrackSelected();
 };

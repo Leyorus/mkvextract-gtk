@@ -194,7 +194,12 @@ std::vector<track_info_t> MkvExtractor::parseTracksInfos(std::string raw_infos) 
 }
 
 std::string MkvExtractor::getDefaultFileName (track_info_t info){
-	return "Track" + info.num + "_" + info.language + getDefaultFileNameExtension(info);
+	std::string ret = "Track" + info.num;
+	ret+= "_" + info.type;
+	if (info.language.size() != 0)
+		ret += "_" + info.language;
+	ret += getDefaultFileNameExtension(info);
+	return ret;
 }
 
 std::string MkvExtractor::getDefaultFileNameExtension(track_info_t info) {
@@ -223,8 +228,8 @@ void MkvExtractor::extractTracks(const std::map<int, std::string> tracks_to_extr
 	    execvp(argv[0], argv);
 	    delete[] argv;
 
-	} else {
-		std::cout << "No track to extract" << std::endl;
+	} else { // No track to extract
+//		std::cout << "No track to extract" << std::endl;
 	}
 }
 
