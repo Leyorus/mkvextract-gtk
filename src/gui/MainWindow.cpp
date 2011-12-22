@@ -20,6 +20,9 @@ along with this program. If not, see  <http://www.gnu.org/licenses/>.
 */
 
 #include "MainWindow.h"
+#include "MkvInfoParser.h"
+#include "MkvExtractor.h"
+
 #include <iostream>
 #include <sstream>
 #include <pthread.h>
@@ -39,7 +42,7 @@ MainWindow::MainWindow() :
 			inputFileButton(Gtk::FILE_CHOOSER_ACTION_OPEN),
 			outputFrame("Output folder"),
 			outputFileButton(Gtk::FILE_CHOOSER_ACTION_SELECT_FOLDER),
-			contentFrame(""),
+			contentFrame("Content"),
 			extractOrPauseButton("Extract"),
 			cancelButton(Gtk::Stock::CANCEL)
 {
@@ -55,7 +58,7 @@ MainWindow::MainWindow() :
 	mkvFileNameFilter.set_name("MKV Files");
 	mkvFileNameFilter.add_mime_type("video/x-matroska");
 	inputFileButton.add_filter(mkvFileNameFilter);
-	inputFileButton.signal_file_set().connect(sigc::mem_fun(this, &MainWindow::fileSet));
+	inputFileButton.signal_file_set().connect(sigc::mem_fun(this, &MainWindow::onFileSet));
 
 	outputFrame.add(outputFileButton);
 	mainVBox.pack_start(outputFrame, Gtk::PACK_SHRINK);
@@ -103,22 +106,19 @@ MainWindow::MainWindow() :
 
 	current_state = stop_status;
 	pthread_mutex_init(&extraction_status_mutex, 0);
-
-	fileChoosen = false;
-	trackSelected = false;
 }
 
-void MainWindow::printTracksInfos(std::vector<track_info_t> & tracks) {
+void MainWindow::printTracksInfos(std::vector<Core::track_info_t> tracks) {
 	refListStore->clear();
-    for(std::vector<track_info_t>::iterator i = tracks.begin();i != tracks.end();i++){
+    for(std::vector<Core::track_info_t>::iterator i = tracks.begin();i != tracks.end();i++){
     	Gtk::TreeModel::Row row = *(refListStore->append());
     	row[m_Columns.m_col_selected] = false;
-    	row[m_Columns.m_col_id] = toInteger(i->num);
+    	row[m_Columns.m_col_id] = Core::toInteger(i->num);
     	row[m_Columns.m_col_type] = i->type;
     	row[m_Columns.m_col_codec] = i->codec;
     	row[m_Columns.m_col_language] = i->language;
-    	row[m_Columns.m_col_outputFileName] = mkvExtractor.getDefaultFileName(*i);
-    	tracksToExtract[toInteger(i->num)] = false;
+    	row[m_Columns.m_col_outputFileName] = Core::MkvExtractor::getDefaultFileName(*i);
+    	tracksToExtract[Core::toInteger(i->num)] = false;
     }
 }
 
@@ -196,13 +196,13 @@ void* extractionThread_fun(void* args) {
 	if (win->getExtractionProcessPID() == 0) { // child process
 		close(master);
 
-		win->getMkvExtractor().extractTracks(toExtract);
+		Core::MkvExtractor::extractTracks(win->getInputFileName(), toExtract);
 
 	} else { // parent process
 		win->setExtractionStatus(extracting_status);
 		std::cout << "Command line used : "<< std::endl;
 		std::cout << "-------------------- "<< std::endl;
-		std::cout << win->getMkvExtractor().getExtractCommandLine(toExtract) << std::endl;
+		std::cout << Core::MkvExtractor::getExtractCommandLine(win->getInputFileName(), toExtract) << std::endl;
 
 		std::string str;
 		while (getLine(master, str)) {
@@ -221,8 +221,12 @@ void* extractionThread_fun(void* args) {
 	return 0;
 }
 
+std::string MainWindow::getInputFileName(){
+	return this->inputFileButton.get_filename();
+}
+
 std::string MainWindow::getFileName(int id) {
-	Gtk::TreeModel::Path path(toString(id-1));
+	Gtk::TreeModel::Path path(Core::toString(id-1));
 	Gtk::TreeModel::Row row = *(refListStore->get_iter(path));
 	std::string name;
 	row.get_value(5, name);
@@ -283,7 +287,7 @@ bool MainWindow::onTimeOut() {
 
 void MainWindow::updateProgressBar() {
 	progressBar.set_fraction((double)progress_percentage / 100.0);
-	progressBar.set_text(toString(progress_percentage)+ "%");
+	progressBar.set_text(Core::toString(progress_percentage)+ "%");
 }
 
 void MainWindow::onExtractionEnd() {
@@ -292,7 +296,7 @@ void MainWindow::onExtractionEnd() {
 	extractOrPauseButton.set_image(*Gtk::manage (new Gtk::Image (Gtk::Stock::CONVERT, Gtk::ICON_SIZE_BUTTON)));
 	progress_percentage = 0;
 	progressBar.set_fraction((double)progress_percentage / 100.0);
-	progressBar.set_text(toString(progress_percentage)+ "%");
+	progressBar.set_text(Core::toString(progress_percentage)+ "%");
 }
 
 void MainWindow::onExtractOrPauseButton() {
@@ -320,18 +324,13 @@ bool MainWindow::onCloseButton(GdkEventAny * ev) {
 	return false;
 }
 
-void MainWindow::fileSet() {
-	fileChoosen = true;
-	trackSelected = false;
+void MainWindow::onFileSet() {
 
 	trackList.set_sensitive(true);
 
-	mkvExtractor = MkvExtractor(inputFileButton.get_filename());
-
 	tracksToExtract.clear();
-	tracks = mkvExtractor.getTracksInfos();
-	printTracksInfos(tracks);
+	printTracksInfos(Core::MkvInfoParser::parseTracksInfos(getInputFileName()));
 
-	outputFileButton.set_current_folder(dirName(inputFileButton.get_filename().c_str()));
+	outputFileButton.set_current_folder(dirName(getInputFileName()));
 }
 

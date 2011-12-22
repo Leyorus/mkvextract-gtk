@@ -19,28 +19,22 @@ along with this program. If not, see  <http://www.gnu.org/licenses/>.
 ===========================================================================
 */
 
-#ifndef DEF_MKVINFOEXTRACTOR
-#define DEF_MKVINFOEXTRACTOR
-
-#include <vector>
-#include <string>
-#include <map>
 #include "Common.h"
+#include <sstream>
 
 namespace Core {
 
-class MkvExtractor {
-public:
-	static void extractTracks(std::string inputFilePath, const std::map<int, std::string> tracks_to_extract);
-	static std::string getExtractCommandLine(std::string inputFilePath, std::map<int, std::string> tracks_to_extract);
-	static std::string getDefaultFileName (track_info_t info);
+std::string toString(int number) {
+   std::stringstream ss;
+   ss << number;
+   return ss.str();
+}
 
-private:
-	static std::vector<std::string> makeExtractCommandLine(std::string inputFilePath, std::map<int, std::string> tracks_to_extract, bool usable);
-	const static std::map<std::string, std::string> createFileExtensionsMap();
-	static std::string getDefaultFileNameExtension(track_info_t info);
-};
+int toInteger(const std::string &str) {
+	std::stringstream ss(str);
+	int n;
+	ss >> n;
+	return n;
+}
 
 }
-#endif
-

@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
     MainWindow window;
 	Glib::RefPtr<Gtk::Settings> settings = Gtk::Settings::get_default();
 	/* force using icons on stock buttons: */
-	settings->property_gtk_button_images() = true; ;
+	settings->property_gtk_button_images() = true;
 
     Gtk::Main::run(window);
 

@@ -36,7 +36,8 @@ along with this program. If not, see  <http://www.gnu.org/licenses/>.
 #include <gtkmm/progressbar.h>
 #include <gtkmm/buttonbox.h>
 
-#include <MkvExtractor.h>
+
+#include "Common.h"
 #include <string>
 #include <vector>
 #include <map>
@@ -67,13 +68,12 @@ public:
 class MainWindow: public Gtk::Window {
 public:
 	MainWindow();
-	MkvExtractor getMkvExtractor(){ return this->mkvExtractor;}
 	std::map<int,bool> getUserSelection() {return this->tracksToExtract;}
 	bool isExtracting();
 	void setExtractionStatus(extraction_status_t newState);
 	void setExtractionProcessPID(int PID) { extractionProcess_pid = PID;};
 	int getExtractionProcessPID() { return extractionProcess_pid;};
-	std::vector<track_info_t> tracks;
+	std::string getInputFileName();
 	std::string getFileName(int id);
 	std::string getOutputFolder() { return outputFileButton.get_current_folder();};
 	bool onTimeOut();
@@ -96,17 +96,14 @@ private:
 	Gtk::Button extractOrPauseButton;
 	Gtk::Button cancelButton;
 
-	MkvExtractor mkvExtractor;
 	std::map<int,bool> tracksToExtract;
 
 	extraction_status_t current_state;
-//	bool extracting;
+
 	pthread_mutex_t extraction_status_mutex;
 	pthread_t extraction_thread;
 	pid_t extractionProcess_pid;
 
-	bool fileChoosen;
-	bool trackSelected;
 	int progress_percentage;
 
 	void startExtraction();
@@ -114,8 +111,8 @@ private:
 	void pauseExtraction();
 	void continueExtraction();
 	void enableTimer();
-    void fileSet();
-	void printTracksInfos(std::vector<track_info_t> & tracks);
+    void onFileSet();
+	void printTracksInfos(std::vector<Core::track_info_t> tracks);
 	void updateProgressBar();
 	void onExtractionEnd();
 	void onCheckboxClicked(Glib::ustring path);
