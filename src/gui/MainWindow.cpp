@@ -67,12 +67,15 @@ MainWindow::MainWindow() :
 	mainVBox.pack_start(contentFrame, Gtk::PACK_EXPAND_WIDGET);
 	trackList.set_sensitive(false);
 
-	contentFrame.add(trackList);
+//	contentFrame.add(trackList);
+	scrolledContentWindow.set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
+	contentFrame.add(scrolledContentWindow);
+	scrolledContentWindow.add(trackList);
 
 	 //Create the Tree model:
 	refListStore = Gtk::ListStore::create(m_Columns);
 	trackList.set_model(refListStore);
-	trackList.set_size_request(400,150);
+	trackList.set_size_request(450,150);
 	trackList.set_border_width(20);
 	trackList.append_column_editable("", m_Columns.m_col_selected);
 

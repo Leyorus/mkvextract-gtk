@@ -35,6 +35,7 @@ along with this program. If not, see  <http://www.gnu.org/licenses/>.
 #include <gtkmm/liststore.h>
 #include <gtkmm/progressbar.h>
 #include <gtkmm/buttonbox.h>
+#include <gtkmm/scrolledwindow.h>
 
 
 #include "Common.h"
@@ -88,6 +89,7 @@ private:
 	Gtk::Frame outputFrame;
 	Gtk::FileChooserButton outputFileButton;
 	Gtk::Frame contentFrame;
+	Gtk::ScrolledWindow scrolledContentWindow;
 	ModelColumns m_Columns;
 	Glib::RefPtr<Gtk::ListStore> refListStore;
 	Gtk::TreeView trackList;
