@@ -107,6 +107,9 @@ private:
 	pid_t extractionProcess_pid;
 
 	int progress_percentage;
+	int time_elapsed;
+	int remainingTime;
+	timeval lastStartTime;
 
 	void startExtraction();
 	void stopExtraction();
@@ -115,13 +118,16 @@ private:
 	void enableTimer();
     void onFileSet();
 	void printTracksInfos(std::vector<Core::track_info_t> tracks);
-	void updateProgressBar();
+	void updateProgress();
 	void onExtractionEnd();
 	void onCheckboxClicked(Glib::ustring path);
 	void onExtractOrPauseButton();
 	void onCancelButton();
 	bool onCloseButton(GdkEventAny * ev);
 	bool isATrackSelected();
+	void initTime() ;
+
+	std::string getRemainingTime();
 };
 
 #endif

@@ -31,6 +31,8 @@ along with this program. If not, see  <http://www.gnu.org/licenses/>.
 #include <sys/wait.h>
 #include <gtkmm/image.h>
 
+#include <sys/time.h> // for gettimeofday() function
+
 #include <pty.h>
 
 using namespace std;
@@ -256,6 +258,7 @@ void MainWindow::continueExtraction() {
 	extractOrPauseButton.set_image(*Gtk::manage (new Gtk::Image (Gtk::Stock::MEDIA_PAUSE, Gtk::ICON_SIZE_BUTTON)));
     kill(this->extractionProcess_pid, SIGCONT);
     setExtractionStatus(extracting_status);
+    gettimeofday(&lastStartTime, 0);
 	enableTimer();
 }
 
@@ -264,8 +267,12 @@ void MainWindow::startExtraction() {
 	cancelButton.set_sensitive(true);
 	extractOrPauseButton.set_image(*Gtk::manage (new Gtk::Image (Gtk::Stock::MEDIA_PAUSE, Gtk::ICON_SIZE_BUTTON)));
 	pthread_create(&extraction_thread, 0, &extractionThread_fun, (void*) this);
+	gettimeofday(&lastStartTime, 0);
+	time_elapsed = 0;
 	enableTimer();
 }
+
+
 
 void MainWindow::enableTimer() {
 	sigc::connection con = Glib::signal_timeout().connect(sigc::mem_fun(*this, &MainWindow::onTimeOut), 500);
@@ -278,7 +285,7 @@ bool MainWindow::onTimeOut() {
 		ret = false; // disconnect timer
 		break;
 	case extracting_status:
-		updateProgressBar(); // return true = continue timer
+		updateProgress(); // return true = continue timer
 		break;
 	case stop_status:
 		onExtractionEnd();
@@ -288,9 +295,38 @@ bool MainWindow::onTimeOut() {
 	return ret;
 }
 
-void MainWindow::updateProgressBar() {
+
+std::string readableTime(int time_in_sec) {
+	std::string ret ="";
+	int hour, min, seconds;
+	hour = time_in_sec / 3600;
+	seconds = time_in_sec % 3600;
+	min = seconds / 60;
+	seconds = seconds % 60;
+	if (hour != 0)
+		ret += Core::toString(hour) + "h ";
+	if (min != 0)
+		ret += Core::toString(min) + "min ";
+	ret += Core::toString(seconds) + "sec";
+	return ret;
+}
+
+void MainWindow::updateProgress() {
 	progressBar.set_fraction((double)progress_percentage / 100.0);
-	progressBar.set_text(Core::toString(progress_percentage)+ "%");
+	timeval currentTime;
+	gettimeofday(&currentTime, 0);
+	time_elapsed += (currentTime.tv_sec - lastStartTime.tv_sec);
+	gettimeofday( &lastStartTime, 0);
+	lastStartTime = currentTime;
+
+	int remainingTime;
+	if (progress_percentage !=0) {
+		remainingTime = time_elapsed * (100-progress_percentage) / progress_percentage;
+	} else {
+		remainingTime = 0;
+	}
+
+	progressBar.set_text(Core::toString(progress_percentage)+ "%, Time elapsed = " + readableTime(time_elapsed) +", Time remaining = " + readableTime(remainingTime));
 }
 
 void MainWindow::onExtractionEnd() {
@@ -301,6 +337,7 @@ void MainWindow::onExtractionEnd() {
 	progressBar.set_fraction((double)progress_percentage / 100.0);
 	progressBar.set_text(Core::toString(progress_percentage)+ "%");
 }
+
 
 void MainWindow::onExtractOrPauseButton() {
 	switch(current_state) {
@@ -335,5 +372,15 @@ void MainWindow::onFileSet() {
 	printTracksInfos(Core::MkvInfoParser::parseTracksInfos(getInputFileName()));
 
 	outputFileButton.set_current_folder(dirName(getInputFileName()));
+}
+
+void MainWindow::initTime() {
+	time_elapsed = 0;
+}
+
+std::string MainWindow::getRemainingTime() {
+	std::string ret;
+
+	return ret;
 }
 
