@@ -323,6 +323,9 @@ bool MainWindow::onTimeOut() {
 	case stop_status:
 		onExtractionEnd(true);
 		ret = false; // disconnect timer
+
+		Gtk::MessageDialog dialog(*this, "Extraction success !");
+		dialog.run();
 		break;
 	}
 	return ret;
