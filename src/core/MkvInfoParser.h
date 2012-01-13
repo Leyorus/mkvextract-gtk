@@ -24,15 +24,12 @@ along with this program. If not, see  <http://www.gnu.org/licenses/>.
 
 #include <vector>
 #include <string>
-#include <map>
 #include "Common.h"
 
 namespace Core {
 class MkvInfoParser {
 public:
 	static std::vector<track_info_t> parseTracksInfos(std::string mkvFileName);
-private:
-	static std::string getRawMkvInfo(std::string filePath);
 };
 
 }

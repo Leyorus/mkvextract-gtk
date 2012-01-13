@@ -4,7 +4,7 @@ project(mkvextract-gtk)
 
 find_package(PkgConfig)
 
-pkg_check_modules(GTKMM gtkmm-2.4) # look into FindPkgConfig.cmake, 
+pkg_check_modules(GTKMM gtkmm-3.0) # look into FindPkgConfig.cmake, 
 
 set(CMAKE_CXX_FLAGS "-O2 -Wall")
 

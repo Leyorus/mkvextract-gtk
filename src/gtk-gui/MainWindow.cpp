@@ -20,8 +20,8 @@ along with this program. If not, see  <http://www.gnu.org/licenses/>.
 */
 
 #include "MainWindow.h"
-#include "MkvInfoParser.h"
-#include "MkvExtractor.h"
+#include <core/MkvInfoParser.h>
+#include <core/MkvExtractor.h>
 
 #include <iostream>
 #include <sstream>
@@ -30,6 +30,7 @@ along with this program. If not, see  <http://www.gnu.org/licenses/>.
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <gtkmm/image.h>
+#include <glibmm/refptr.h>
 
 #include <sys/time.h> // for gettimeofday() function
 
@@ -48,17 +49,18 @@ MainWindow::MainWindow() :
 			extractOrPauseButton("Extract"),
 			cancelButton(Gtk::Stock::CANCEL)
 {
-	this->set_title("MkvExtract-Gtk");
+	this->set_title("MkvExtract-Gtk hello world vim !");
 	this->signal_delete_event().connect(sigc::mem_fun(this, &MainWindow::onCloseButton));
 	this->set_border_width(10);
+	this->set_size_request(500,350);
 	extractOrPauseButton.set_image(*Gtk::manage (new Gtk::Image (Gtk::Stock::CONVERT, Gtk::ICON_SIZE_BUTTON)));
 	inputFrame.add(inputFileButton);
-	inputFileButton.set_border_width(5);
-	outputFileButton.set_border_width(5);
+	//inputFileButton.set_border_width(5);
+	//outputFileButton.set_border_width(5);
 	mainVBox.pack_start(inputFrame, Gtk::PACK_SHRINK);
-	Gtk::FileFilter mkvFileNameFilter;
-	mkvFileNameFilter.set_name("MKV Files");
-	mkvFileNameFilter.add_mime_type("video/x-matroska");
+	Glib::RefPtr<Gtk::FileFilter> mkvFileNameFilter = Gtk::FileFilter::create();
+	mkvFileNameFilter->set_name("MKV Files");
+	mkvFileNameFilter->add_mime_type("video/x-matroska");
 	inputFileButton.add_filter(mkvFileNameFilter);
 	inputFileButton.signal_file_set().connect(sigc::mem_fun(this, &MainWindow::onFileSet));
 
@@ -77,8 +79,9 @@ MainWindow::MainWindow() :
 	 //Create the Tree model:
 	refListStore = Gtk::ListStore::create(m_Columns);
 	trackList.set_model(refListStore);
-	trackList.set_size_request(450,150);
+	//trackList.set_size_request(450,400);
 	trackList.set_border_width(20);
+	trackList.set_rules_hint(true);
 	trackList.append_column_editable("", m_Columns.m_col_selected);
 
 	((Gtk::CellRendererToggle *) trackList.get_column_cell_renderer(0))->signal_toggled().connect(
@@ -114,7 +117,7 @@ MainWindow::MainWindow() :
 }
 
 void MainWindow::printTracksInfos(std::vector<Core::track_info_t> tracks) {
-	refListStore->clear();
+    refListStore->clear();
     for(std::vector<Core::track_info_t>::iterator i = tracks.begin();i != tracks.end();i++){
     	Gtk::TreeModel::Row row = *(refListStore->append());
     	row[m_Columns.m_col_selected] = false;
@@ -186,28 +189,29 @@ bool getLine(int fd, std::string &str) {
 	return str.size() != 0;
 }
 
-void* extractionThread_fun(void* args) {
-	MainWindow *win = (MainWindow*) args;
+
+
+void MainWindow::extract() {
 	std::map<int, std::string> toExtract;
-	std::map<int,bool> tracksToExtract = win->getUserSelection();
+	std::map<int,bool> tracksToExtract = getUserSelection();
 	for (std::map<int, bool>::iterator i = tracksToExtract.begin(); i != tracksToExtract.end(); i++) {
 		if (i->second) {
-			toExtract[i->first] = win->getOutputFolder() + "/" + win->getFileName(i->first);
+			toExtract[i->first] = getOutputFolder() + "/" + getFileName(i->first);
 		}
 	}
 
 	int master;
-	win->setExtractionProcessPID(forkpty(&master, NULL, NULL, NULL));
-	if (win->getExtractionProcessPID() == 0) { // child process
+	setExtractionProcessPID(forkpty(&master, NULL, NULL, NULL));
+	if (getExtractionProcessPID() == 0) { // child process
 		close(master);
 
-		Core::MkvExtractor::extractTracks(win->getInputFileName(), toExtract);
+		Core::MkvExtractor::extractTracks(getInputFileName(), toExtract);
 
 	} else { // parent process
-		win->setExtractionStatus(extracting_status);
+		setExtractionStatus(MainWindow::extracting_status);
 		std::cout << "Command line used : "<< std::endl;
 		std::cout << "-------------------- "<< std::endl;
-		std::cout << Core::MkvExtractor::getExtractCommandLine(win->getInputFileName(), toExtract) << std::endl;
+		std::cout << Core::MkvExtractor::getExtractCommandLine(getInputFileName(), toExtract) << std::endl;
 
 		std::string str;
 		while (getLine(master, str)) {
@@ -215,14 +219,18 @@ void* extractionThread_fun(void* args) {
 			int ret = sscanf(str.c_str(), "%*[^:] : %d", &progress);
 
 			if (ret > 0) {
-				win->setProgressPercentage(progress);
-			} else {
-//				std::cout << str;
+				setProgressPercentage(progress);
 			}
+			std::cout << str;
 
 		}
-		win->setExtractionStatus(stop_status);
+		setExtractionStatus(MainWindow::stop_status);
 	}
+}
+
+void* MainWindow::extractThread_fun(void* thisWindow) {
+	MainWindow *win = (MainWindow*) thisWindow;
+	win->extract();
 	return 0;
 }
 
@@ -231,7 +239,7 @@ std::string MainWindow::getInputFileName(){
 }
 
 std::string MainWindow::getFileName(int id) {
-	Gtk::TreeModel::Path path(Core::toString(id-1));
+	Gtk::TreeModel::Path path(Core::toString(id));
 	Gtk::TreeModel::Row row = *(refListStore->get_iter(path));
 	std::string name;
 	row.get_value(5, name);
@@ -266,7 +274,7 @@ void MainWindow::startExtraction() {
 	extractOrPauseButton.set_label("Pause");
 	cancelButton.set_sensitive(true);
 	extractOrPauseButton.set_image(*Gtk::manage (new Gtk::Image (Gtk::Stock::MEDIA_PAUSE, Gtk::ICON_SIZE_BUTTON)));
-	pthread_create(&extraction_thread, 0, &extractionThread_fun, (void*) this);
+	pthread_create(&extraction_thread, 0, &extractThread_fun, (void*) this);
 	gettimeofday(&lastStartTime, 0);
 	time_elapsed = 0;
 	enableTimer();

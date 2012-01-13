@@ -38,13 +38,12 @@ along with this program. If not, see  <http://www.gnu.org/licenses/>.
 #include <gtkmm/scrolledwindow.h>
 
 
-#include "Common.h"
+#include <core/Common.h>
 #include <string>
 #include <vector>
 #include <map>
 #include <pthread.h>
 
-typedef enum {extracting_status, stop_status, paused_status} extraction_status_t;
 
 class ModelColumns: public Gtk::TreeModelColumnRecord {
 public:
@@ -69,18 +68,6 @@ public:
 class MainWindow: public Gtk::Window {
 public:
 	MainWindow();
-	std::map<int,bool> getUserSelection() {return this->tracksToExtract;}
-	bool isExtracting();
-	void setExtractionStatus(extraction_status_t newState);
-	void setExtractionProcessPID(int PID) { extractionProcess_pid = PID;};
-	int getExtractionProcessPID() { return extractionProcess_pid;};
-	std::string getInputFileName();
-	std::string getFileName(int id);
-	std::string getOutputFolder() { return outputFileButton.get_current_folder();};
-	bool onTimeOut();
-	void setProgressPercentage(unsigned int percentage) {
-		this->progress_percentage = percentage;
-	}
 private:
 	Gtk::Window window;
 	Gtk::VBox mainVBox;
@@ -100,6 +87,7 @@ private:
 
 	std::map<int,bool> tracksToExtract;
 
+	typedef enum {extracting_status, stop_status, paused_status} extraction_status_t;
 	extraction_status_t current_state;
 
 	pthread_mutex_t extraction_status_mutex;
@@ -128,6 +116,22 @@ private:
 	void initTime() ;
 
 	std::string getRemainingTime();
+
+	std::map<int,bool> getUserSelection() {return this->tracksToExtract;}
+	bool isExtracting();
+	void setExtractionStatus(extraction_status_t newState);
+	void setExtractionProcessPID(int PID) { extractionProcess_pid = PID;};
+	int getExtractionProcessPID() { return extractionProcess_pid;};
+	std::string getInputFileName();
+	std::string getFileName(int id);
+	std::string getOutputFolder() { return outputFileButton.get_current_folder();};
+	bool onTimeOut();
+	void setProgressPercentage(unsigned int percentage) {
+		this->progress_percentage = percentage;
+	}
+
+	static void* extractThread_fun(void* thisWindow);
+	void extract();
 };
 
 #endif
