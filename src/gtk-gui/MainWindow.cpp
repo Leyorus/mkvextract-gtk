@@ -31,6 +31,7 @@ along with this program. If not, see  <http://www.gnu.org/licenses/>.
 #include <sys/wait.h>
 #include <gtkmm/image.h>
 #include <glibmm/refptr.h>
+#include <gtkmm/messagedialog.h>
 
 #include <sys/time.h> // for gettimeofday() function
 
@@ -49,7 +50,7 @@ MainWindow::MainWindow() :
 			extractOrPauseButton("Extract"),
 			cancelButton(Gtk::Stock::CANCEL)
 {
-	this->set_title("MkvExtract-Gtk hello world vim !");
+	this->set_title("MkvExtract-Gtk");
 	this->signal_delete_event().connect(sigc::mem_fun(this, &MainWindow::onCloseButton));
 	this->set_border_width(10);
 	this->set_size_request(500,350);
@@ -109,6 +110,8 @@ MainWindow::MainWindow() :
 
 	cancelButton.set_can_focus(false);
 	cancelButton.set_sensitive(false);
+
+	progressBar.set_show_text(true);
 
 	this->show_all();
 
@@ -246,11 +249,29 @@ std::string MainWindow::getFileName(int id) {
 	return name;
 }
 
-void MainWindow::stopExtraction()
-{
-    kill(this->extractionProcess_pid, SIGKILL);
-    setExtractionStatus(stop_status);
-    onExtractionEnd();
+bool MainWindow::stopExtraction() {
+
+	Gtk::MessageDialog dialog(*this, "Extraction process is currently running.",
+			false /* use_markup */, Gtk::MESSAGE_QUESTION,
+			Gtk::BUTTONS_OK_CANCEL);
+
+	dialog.set_secondary_text("Are you sure you want to cancel the extraction ?");
+	int result = dialog.run();
+
+	switch (result) {
+	case (Gtk::RESPONSE_OK):
+		kill(this->extractionProcess_pid, SIGKILL);
+		disableTimer();
+		setExtractionStatus(stop_status);
+		onExtractionEnd(false);
+		return true;
+		break;
+	case (Gtk::RESPONSE_CANCEL):
+		break;
+	default:
+		break;
+	}
+	return false;
 }
 
 void MainWindow::pauseExtraction()
@@ -283,7 +304,11 @@ void MainWindow::startExtraction() {
 
 
 void MainWindow::enableTimer() {
-	sigc::connection con = Glib::signal_timeout().connect(sigc::mem_fun(*this, &MainWindow::onTimeOut), 500);
+	con = Glib::signal_timeout().connect(sigc::mem_fun(*this, &MainWindow::onTimeOut), 500);
+}
+
+void MainWindow::disableTimer() {
+	con.disconnect();
 }
 
 bool MainWindow::onTimeOut() {
@@ -296,7 +321,7 @@ bool MainWindow::onTimeOut() {
 		updateProgress(); // return true = continue timer
 		break;
 	case stop_status:
-		onExtractionEnd();
+		onExtractionEnd(true);
 		ret = false; // disconnect timer
 		break;
 	}
@@ -337,7 +362,7 @@ void MainWindow::updateProgress() {
 	progressBar.set_text(Core::toString(progress_percentage)+ "%, Time elapsed = " + readableTime(time_elapsed) +", Time remaining = " + readableTime(remainingTime));
 }
 
-void MainWindow::onExtractionEnd() {
+void MainWindow::onExtractionEnd(bool extractionSuccess) {
 	extractOrPauseButton.set_label("Extract");
 	cancelButton.set_sensitive(false);
 	extractOrPauseButton.set_image(*Gtk::manage (new Gtk::Image (Gtk::Stock::CONVERT, Gtk::ICON_SIZE_BUTTON)));
@@ -367,7 +392,10 @@ void MainWindow::onCancelButton() {
 
 bool MainWindow::onCloseButton(GdkEventAny * ev) {
 	if (isExtracting()) {
-		this->stopExtraction();
+
+		if (!stopExtraction()) {
+			return true;
+		}
 	}
 	return false;
 }

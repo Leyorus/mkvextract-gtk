@@ -36,6 +36,7 @@ along with this program. If not, see  <http://www.gnu.org/licenses/>.
 #include <gtkmm/progressbar.h>
 #include <gtkmm/buttonbox.h>
 #include <gtkmm/scrolledwindow.h>
+#include <gtkmm/label.h>
 
 
 #include <core/Common.h>
@@ -98,16 +99,18 @@ private:
 	int time_elapsed;
 	int remainingTime;
 	timeval lastStartTime;
+	sigc::connection con;
 
 	void startExtraction();
-	void stopExtraction();
+	bool stopExtraction();
 	void pauseExtraction();
 	void continueExtraction();
 	void enableTimer();
+	void disableTimer();
     void onFileSet();
 	void printTracksInfos(std::vector<Core::track_info_t> tracks);
 	void updateProgress();
-	void onExtractionEnd();
+	void onExtractionEnd(bool extractionSuccess);
 	void onCheckboxClicked(Glib::ustring path);
 	void onExtractOrPauseButton();
 	void onCancelButton();
