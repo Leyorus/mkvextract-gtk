@@ -13,6 +13,16 @@ When installed, start by creating a directory for building :
 	$ cmake /path_to_source_folder
 	
 Finally, to compile, just run :
-	$ make mkvextract-gtk
+	$ make
+	
+The executable can be found here : build_dir/mkvextract-gtk
 
-The executable can be found here : build_dir/src/mkvextract-gtk
+To install run (as a superuser) :
+	$ make install
+	
+When installed, to launch the program, just run:
+	$ mkvextract-gtk
+	
+To unistall, (run as a superuser) :
+	$ make uninstall
+	
