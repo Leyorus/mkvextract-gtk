@@ -48,12 +48,14 @@ MainWindow::MainWindow() :
 			outputFileButton(Gtk::FILE_CHOOSER_ACTION_SELECT_FOLDER),
 			contentFrame("Content"),
 			extractOrPauseButton("Extract"),
-			cancelButton(Gtk::Stock::CANCEL)
+			cancelButton(Gtk::Stock::CANCEL),
+			labelBox(true),
+			labelTable(1,2,true)
 {
 	this->set_title("MkvExtract-Gtk");
 	this->signal_delete_event().connect(sigc::mem_fun(this, &MainWindow::onCloseButton));
 	this->set_border_width(10);
-	this->set_size_request(500,350);
+//	this->set_size_request(500,350);
 	extractOrPauseButton.set_image(*Gtk::manage (new Gtk::Image (Gtk::Stock::CONVERT, Gtk::ICON_SIZE_BUTTON)));
 	inputFrame.add(inputFileButton);
 	//inputFileButton.set_border_width(5);
@@ -68,21 +70,20 @@ MainWindow::MainWindow() :
 	outputFrame.add(outputFileButton);
 	mainVBox.pack_start(outputFrame, Gtk::PACK_SHRINK);
 
-
 	mainVBox.pack_start(contentFrame, Gtk::PACK_EXPAND_WIDGET);
 	trackList.set_sensitive(false);
+	scrolledContentWindow.set_size_request(500, 200);
 
-//	contentFrame.add(trackList);
 	scrolledContentWindow.set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
 	contentFrame.add(scrolledContentWindow);
 	scrolledContentWindow.add(trackList);
 
 	 //Create the Tree model:
 	refListStore = Gtk::ListStore::create(m_Columns);
-	trackList.set_model(refListStore);
-	//trackList.set_size_request(450,400);
+	trackList.set_model(refListStore);;
 	trackList.set_border_width(20);
 	trackList.set_rules_hint(true);
+
 	trackList.append_column_editable("", m_Columns.m_col_selected);
 
 	((Gtk::CellRendererToggle *) trackList.get_column_cell_renderer(0))->signal_toggled().connect(
@@ -94,8 +95,31 @@ MainWindow::MainWindow() :
 	trackList.append_column("Language", m_Columns.m_col_language);
 	trackList.append_column_editable("Output filename", m_Columns.m_col_outputFileName);
 
+	std::vector<Gtk::TreeViewColumn*> columns = trackList.get_columns();
+	for (size_t i = 1; i < columns.size(); i++) { // we skip the first column (checkbox)
+		columns.at(i)->set_resizable(true);
+	}
+
+
 	extractOrPauseButton.signal_clicked().connect(sigc::mem_fun(this, &MainWindow::onExtractOrPauseButton));
 	cancelButton.signal_clicked().connect(sigc::mem_fun(this, &MainWindow::onCancelButton));
+
+	labelStatus.set_alignment(Gtk::ALIGN_START, Gtk::ALIGN_CENTER);
+	labelElapsedTime.set_alignment(Gtk::ALIGN_START, Gtk::ALIGN_CENTER);
+	labelRemainingTime.set_alignment(Gtk::ALIGN_START, Gtk::ALIGN_CENTER);
+
+	labelStatus.set_text("Choose input file");
+	labelElapsedTime.set_text("Elapsed time:");
+	labelRemainingTime.set_text("Remaining time:");
+	labelElapsedTime.set_visible(false);
+	labelElapsedTime.set_no_show_all();
+	labelRemainingTime.set_visible(false);
+	labelRemainingTime.set_no_show_all();
+
+	mainVBox.pack_start(labelBox);
+	labelBox.pack_start(labelStatus);
+	labelBox.pack_start(labelElapsedTime);
+	labelBox.pack_start(labelRemainingTime);
 
 	mainVBox.pack_start(progressBar, Gtk::PACK_SHRINK);
 	mainVBox.pack_start(hButtonBox, Gtk::PACK_SHRINK);
@@ -181,11 +205,8 @@ bool getLine(int fd, std::string &str) {
 
 	while (read(fd, &buffer, sizeof(buffer)) > 0) {
 		// the file is not finished
-		if (buffer == '\r') { // replace '\r' char by '\n'
-			buffer = '\n';
-		}
 		str += buffer;
-		if (buffer == '\n') {
+		if (buffer == '\n' || buffer == '\r') {
 			break;
 		}
 	}
@@ -280,9 +301,11 @@ void MainWindow::pauseExtraction()
     setExtractionStatus(paused_status);
     extractOrPauseButton.set_image(*Gtk::manage (new Gtk::Image (Gtk::Stock::MEDIA_PLAY, Gtk::ICON_SIZE_BUTTON)));
 	extractOrPauseButton.set_label("Continue");
+	labelStatus.set_text("Extraction paused");
 }
 
 void MainWindow::continueExtraction() {
+	labelStatus.set_text("Extracting...");
 	extractOrPauseButton.set_label("Pause");
 	extractOrPauseButton.set_image(*Gtk::manage (new Gtk::Image (Gtk::Stock::MEDIA_PAUSE, Gtk::ICON_SIZE_BUTTON)));
     kill(this->extractionProcess_pid, SIGCONT);
@@ -292,6 +315,9 @@ void MainWindow::continueExtraction() {
 }
 
 void MainWindow::startExtraction() {
+	labelStatus.set_text("Extracting...");
+	labelElapsedTime.set_visible();
+	labelRemainingTime.set_visible();
 	extractOrPauseButton.set_label("Pause");
 	cancelButton.set_sensitive(true);
 	extractOrPauseButton.set_image(*Gtk::manage (new Gtk::Image (Gtk::Stock::MEDIA_PAUSE, Gtk::ICON_SIZE_BUTTON)));
@@ -323,9 +349,6 @@ bool MainWindow::onTimeOut() {
 	case stop_status:
 		onExtractionEnd(true);
 		ret = false; // disconnect timer
-
-		Gtk::MessageDialog dialog(*this, "Extraction success !");
-		dialog.run();
 		break;
 	}
 	return ret;
@@ -362,16 +385,30 @@ void MainWindow::updateProgress() {
 		remainingTime = 0;
 	}
 
-	progressBar.set_text(Core::toString(progress_percentage)+ "%, Time elapsed = " + readableTime(time_elapsed) +", Time remaining = " + readableTime(remainingTime));
+	labelElapsedTime.set_text("Time elapsed : " + readableTime(time_elapsed));
+	labelRemainingTime.set_text("Time remaining : " + readableTime(remainingTime));
+	this->set_title("MkvExtract-Gtk" + std::string(" (") + Core::toString(progress_percentage)+ "%)");
 }
 
 void MainWindow::onExtractionEnd(bool extractionSuccess) {
+	this->set_title("MkvExtract-Gtk");
 	extractOrPauseButton.set_label("Extract");
 	cancelButton.set_sensitive(false);
 	extractOrPauseButton.set_image(*Gtk::manage (new Gtk::Image (Gtk::Stock::CONVERT, Gtk::ICON_SIZE_BUTTON)));
 	progress_percentage = 0;
 	progressBar.set_fraction((double)progress_percentage / 100.0);
 	progressBar.set_text(Core::toString(progress_percentage)+ "%");
+	labelStatus.set_text("Choose track(s) to extract");
+	labelElapsedTime.set_visible(false);
+	labelRemainingTime.set_visible(false);
+	if (extractionSuccess) {
+		Gtk::MessageDialog dialog(*this, "Extraction success !");
+		dialog.set_secondary_text("Done in " + readableTime(time_elapsed));
+		dialog.run();
+	} else {
+
+	}
+
 }
 
 
@@ -411,6 +448,7 @@ void MainWindow::onFileSet() {
 	printTracksInfos(Core::MkvInfoParser::parseTracksInfos(getInputFileName()));
 
 	outputFileButton.set_current_folder(dirName(getInputFileName()));
+	labelStatus.set_text("Choose track(s) to extract");
 }
 
 void MainWindow::initTime() {

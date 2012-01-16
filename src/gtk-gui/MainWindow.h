@@ -37,6 +37,7 @@ along with this program. If not, see  <http://www.gnu.org/licenses/>.
 #include <gtkmm/buttonbox.h>
 #include <gtkmm/scrolledwindow.h>
 #include <gtkmm/label.h>
+#include <gtkmm/table.h>
 
 
 #include <core/Common.h>
@@ -85,6 +86,11 @@ private:
 	Gtk::HButtonBox hButtonBox;
 	Gtk::Button extractOrPauseButton;
 	Gtk::Button cancelButton;
+	Gtk::HBox labelBox;
+	Gtk::Table labelTable;
+	Gtk::Label labelStatus;
+	Gtk::Label labelRemainingTime;
+	Gtk::Label labelElapsedTime;
 
 	std::map<int,bool> tracksToExtract;
 
