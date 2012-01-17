@@ -37,30 +37,36 @@ along with this program. If not, see  <http://www.gnu.org/licenses/>.
 
 #include <pty.h>
 
+
+#include <libintl.h>
+#define _(String) gettext (String)
+#define gettext_noop(String) String
+#define N_(String) gettext_noop (String)
+
 using namespace std;
 
 
-const std::string mainWindowTitle = "MkvExtract-Gtk";
-const std::string inputFrameName = "Input file";
-const std::string outputFrameName = "Output folder";
-const std::string contentFrameName = "Content";
-const std::string extractButtonText = "Extract";
-const std::string pauseButtonText = "Pause";
-const std::string continueButtonText = "Continue";
-const std::string mkvFileNameFilterText = "MKV Files";
+const std::string mainWindowTitle = _("MkvExtract-Gtk");
+const std::string inputFrameName = _("Input file");
+const std::string outputFrameName = _("Output folder");
+const std::string contentFrameName = _("Content");
+const std::string extractButtonText = _("Extract");
+const std::string pauseButtonText = _("Pause");
+const std::string continueButtonText = _("Continue");
+const std::string mkvFileNameFilterText = _("MKV Files");
 
-const std::string columnHeaderIDText = "ID";
-const std::string columnHeaderTypeText = "Type";
-const std::string columnHeaderCodecText = "Codec";
-const std::string columnHeaderLanguageText = "Language";
-const std::string columnHeaderOutputFileNameText = "Output filename";
+const std::string columnHeaderIDText = _("ID");
+const std::string columnHeaderTypeText = _("Type");
+const std::string columnHeaderCodecText = _("Codec");
+const std::string columnHeaderLanguageText = _("Language");
+const std::string columnHeaderOutputFileNameText = _("Output filename");
 
-const std::string statusLabelTextChooseInputFile = "Choose input file";
-const std::string statusLabelTextChooseTracks = "Choose track(s) to extract";
-const std::string statusLabelTextExtracting = "Extracting...";
-const std::string statusLabelTextExtractionPaused = "Extraction paused";
-const std::string elapsedTimeLabelText = "Elapsed time:";
-const std::string remainingTimeLabelText = "Remaining time:";
+const std::string statusLabelTextChooseInputFile = _("Choose input file");
+const std::string statusLabelTextChooseTracks = _("Choose track(s) to extract");
+const std::string statusLabelTextExtracting = _("Extracting...");
+const std::string statusLabelTextExtractionPaused = _("Extraction paused");
+const std::string elapsedTimeLabelText = _("Elapsed time:");
+const std::string remainingTimeLabelText = _("Remaining time:");
 
 
 MainWindow::MainWindow() :
@@ -253,7 +259,7 @@ void MainWindow::extract() {
 
 	} else { // parent process
 		setExtractionStatus(MainWindow::extracting_status);
-		std::cout << "Command line used : "<< std::endl;
+		std::cout << _("Command line used for extraction:") << std::endl;
 		std::cout << Core::MkvExtractor::getExtractCommandLine(getInputFileName(), toExtract) << std::endl;
 
 		std::string str;
@@ -291,11 +297,11 @@ std::string MainWindow::getFileName(int id) {
 
 bool MainWindow::stopExtraction() {
 
-	Gtk::MessageDialog dialog(*this, "Extraction process is currently running.",
+	Gtk::MessageDialog dialog(*this, _("Extraction process is currently running"),
 			false /* use_markup */, Gtk::MESSAGE_QUESTION,
 			Gtk::BUTTONS_OK_CANCEL);
 
-	dialog.set_secondary_text("Are you sure you want to cancel the extraction ?");
+	dialog.set_secondary_text(_("Do you want to cancel the extraction ?"));
 	int result = dialog.run();
 
 	switch (result) {
@@ -422,8 +428,8 @@ void MainWindow::onExtractionEnd(bool extractionSuccess) {
 	labelElapsedTime.set_visible(false);
 	labelRemainingTime.set_visible(false);
 	if (extractionSuccess) {
-		Gtk::MessageDialog dialog(*this, "Extraction success !");
-		dialog.set_secondary_text("Done in " + readableTime(time_elapsed));
+		Gtk::MessageDialog dialog(*this, _("Extraction success !"));
+		dialog.set_secondary_text(std::string(_("Extraction done in")) + " " +readableTime(time_elapsed));
 		dialog.run();
 	} else {
 
