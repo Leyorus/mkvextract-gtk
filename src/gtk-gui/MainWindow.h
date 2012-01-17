@@ -108,7 +108,8 @@ private:
 	sigc::connection con;
 	bool verbose;
 
-	void showIconOnButton();
+	void checkUserSelection();
+    void showIconOnButton();
     void startExtraction();
 	bool stopExtraction();
 	void pauseExtraction();

@@ -194,17 +194,23 @@ std::string dirName(std::string source)
     return source;
 }
 
+void MainWindow::checkUserSelection()
+{
+    if(isATrackSelected()){
+        extractOrPauseButton.set_sensitive(true);
+    }else{
+        if(!this->isExtracting()){
+            extractOrPauseButton.set_sensitive(false);
+        }
+    }
+
+}
+
 void MainWindow::onCheckboxClicked(Glib::ustring str) {
 	Gtk::TreeModel::Path path(str.c_str());
 	Gtk::TreeModel::Row row = *(refListStore->get_iter(path));
 	tracksToExtract[row[m_Columns.m_col_id]] = !tracksToExtract[row[m_Columns.m_col_id]];
-	if (isATrackSelected()) {
-		extractOrPauseButton.set_sensitive(true);
-	} else {
-		if(!this->isExtracting()) {
-			extractOrPauseButton.set_sensitive(false);
-		}
-	}
+    checkUserSelection();
 }
 
 bool MainWindow::isATrackSelected() {
@@ -218,7 +224,7 @@ bool MainWindow::isATrackSelected() {
 
 bool MainWindow::isExtracting() {
 	pthread_mutex_lock(&this->extraction_status_mutex);
-	bool ret = (current_state == extracting_status);
+	bool ret = (current_state == extracting_status || current_state == paused_status);
 	pthread_mutex_unlock(&this->extraction_status_mutex);
 	return ret;
 }
@@ -443,7 +449,7 @@ void MainWindow::onExtractionEnd(bool extractionSuccess) {
 	} else {
 
 	}
-
+	checkUserSelection();
 }
 
 
@@ -484,6 +490,8 @@ void MainWindow::onFileSet() {
 
 	outputFileButton.set_current_folder(dirName(getInputFileName()));
 	labelStatus.set_text(statusLabelTextChooseTracks);
+
+	checkUserSelection();
 }
 
 void MainWindow::initTime() {
