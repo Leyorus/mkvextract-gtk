@@ -40,29 +40,49 @@ along with this program. If not, see  <http://www.gnu.org/licenses/>.
 using namespace std;
 
 
+const std::string mainWindowTitle = "MkvExtract-Gtk";
+const std::string inputFrameName = "Input file";
+const std::string outputFrameName = "Output folder";
+const std::string contentFrameName = "Content";
+const std::string extractButtonText = "Extract";
+const std::string pauseButtonText = "Pause";
+const std::string continueButtonText = "Continue";
+const std::string mkvFileNameFilterText = "MKV Files";
+
+const std::string columnHeaderIDText = "ID";
+const std::string columnHeaderTypeText = "Type";
+const std::string columnHeaderCodecText = "Codec";
+const std::string columnHeaderLanguageText = "Language";
+const std::string columnHeaderOutputFileNameText = "Output filename";
+
+const std::string statusLabelTextChooseInputFile = "Choose input file";
+const std::string statusLabelTextChooseTracks = "Choose track(s) to extract";
+const std::string statusLabelTextExtracting = "Extracting...";
+const std::string statusLabelTextExtractionPaused = "Extraction paused";
+const std::string elapsedTimeLabelText = "Elapsed time:";
+const std::string remainingTimeLabelText = "Remaining time:";
+
+
 MainWindow::MainWindow() :
 			mainVBox(false, 10),
-			inputFrame("Input file"),
+			inputFrame(inputFrameName),
 			inputFileButton(Gtk::FILE_CHOOSER_ACTION_OPEN),
-			outputFrame("Output folder"),
+			outputFrame(outputFrameName),
 			outputFileButton(Gtk::FILE_CHOOSER_ACTION_SELECT_FOLDER),
-			contentFrame("Content"),
-			extractOrPauseButton("Extract"),
+			contentFrame(contentFrameName),
+			extractOrPauseButton(extractButtonText),
 			cancelButton(Gtk::Stock::CANCEL),
 			labelBox(true),
 			labelTable(1,2,true)
 {
-	this->set_title("MkvExtract-Gtk");
+	this->set_title(mainWindowTitle);
 	this->signal_delete_event().connect(sigc::mem_fun(this, &MainWindow::onCloseButton));
 	this->set_border_width(10);
-//	this->set_size_request(500,350);
 	extractOrPauseButton.set_image(*Gtk::manage (new Gtk::Image (Gtk::Stock::CONVERT, Gtk::ICON_SIZE_BUTTON)));
 	inputFrame.add(inputFileButton);
-	//inputFileButton.set_border_width(5);
-	//outputFileButton.set_border_width(5);
 	mainVBox.pack_start(inputFrame, Gtk::PACK_SHRINK);
 	Glib::RefPtr<Gtk::FileFilter> mkvFileNameFilter = Gtk::FileFilter::create();
-	mkvFileNameFilter->set_name("MKV Files");
+	mkvFileNameFilter->set_name(mkvFileNameFilterText);
 	mkvFileNameFilter->add_mime_type("video/x-matroska");
 	inputFileButton.add_filter(mkvFileNameFilter);
 	inputFileButton.signal_file_set().connect(sigc::mem_fun(this, &MainWindow::onFileSet));
@@ -80,7 +100,7 @@ MainWindow::MainWindow() :
 
 	 //Create the Tree model:
 	refListStore = Gtk::ListStore::create(m_Columns);
-	trackList.set_model(refListStore);;
+	trackList.set_model(refListStore);
 	trackList.set_border_width(20);
 	trackList.set_rules_hint(true);
 
@@ -89,11 +109,11 @@ MainWindow::MainWindow() :
 	((Gtk::CellRendererToggle *) trackList.get_column_cell_renderer(0))->signal_toggled().connect(
 			sigc::mem_fun(this, &MainWindow::onCheckboxClicked));
 
-	trackList.append_column("ID", m_Columns.m_col_id);
-	trackList.append_column("Type", m_Columns.m_col_type);
-	trackList.append_column("Codec", m_Columns.m_col_codec);
-	trackList.append_column("Language", m_Columns.m_col_language);
-	trackList.append_column_editable("Output filename", m_Columns.m_col_outputFileName);
+	trackList.append_column(columnHeaderIDText, m_Columns.m_col_id);
+	trackList.append_column(columnHeaderTypeText, m_Columns.m_col_type);
+	trackList.append_column(columnHeaderCodecText, m_Columns.m_col_codec);
+	trackList.append_column(columnHeaderLanguageText, m_Columns.m_col_language);
+	trackList.append_column_editable(columnHeaderOutputFileNameText, m_Columns.m_col_outputFileName);
 
 	std::vector<Gtk::TreeViewColumn*> columns = trackList.get_columns();
 	for (size_t i = 1; i < columns.size(); i++) { // we skip the first column (checkbox)
@@ -108,9 +128,9 @@ MainWindow::MainWindow() :
 	labelElapsedTime.set_alignment(Gtk::ALIGN_START, Gtk::ALIGN_CENTER);
 	labelRemainingTime.set_alignment(Gtk::ALIGN_START, Gtk::ALIGN_CENTER);
 
-	labelStatus.set_text("Choose input file");
-	labelElapsedTime.set_text("Elapsed time:");
-	labelRemainingTime.set_text("Remaining time:");
+	labelStatus.set_text(statusLabelTextChooseInputFile);
+	labelElapsedTime.set_text(elapsedTimeLabelText);
+	labelRemainingTime.set_text(remainingTimeLabelText);
 	labelElapsedTime.set_visible(false);
 	labelElapsedTime.set_no_show_all();
 	labelRemainingTime.set_visible(false);
@@ -234,7 +254,6 @@ void MainWindow::extract() {
 	} else { // parent process
 		setExtractionStatus(MainWindow::extracting_status);
 		std::cout << "Command line used : "<< std::endl;
-		std::cout << "-------------------- "<< std::endl;
 		std::cout << Core::MkvExtractor::getExtractCommandLine(getInputFileName(), toExtract) << std::endl;
 
 		std::string str;
@@ -300,13 +319,13 @@ void MainWindow::pauseExtraction()
     kill(this->extractionProcess_pid, SIGSTOP);
     setExtractionStatus(paused_status);
     extractOrPauseButton.set_image(*Gtk::manage (new Gtk::Image (Gtk::Stock::MEDIA_PLAY, Gtk::ICON_SIZE_BUTTON)));
-	extractOrPauseButton.set_label("Continue");
-	labelStatus.set_text("Extraction paused");
+	extractOrPauseButton.set_label(continueButtonText);
+	labelStatus.set_text(statusLabelTextExtractionPaused);
 }
 
 void MainWindow::continueExtraction() {
-	labelStatus.set_text("Extracting...");
-	extractOrPauseButton.set_label("Pause");
+	labelStatus.set_text(statusLabelTextExtracting);
+	extractOrPauseButton.set_label(pauseButtonText);
 	extractOrPauseButton.set_image(*Gtk::manage (new Gtk::Image (Gtk::Stock::MEDIA_PAUSE, Gtk::ICON_SIZE_BUTTON)));
     kill(this->extractionProcess_pid, SIGCONT);
     setExtractionStatus(extracting_status);
@@ -315,10 +334,10 @@ void MainWindow::continueExtraction() {
 }
 
 void MainWindow::startExtraction() {
-	labelStatus.set_text("Extracting...");
+	labelStatus.set_text(statusLabelTextExtracting);
 	labelElapsedTime.set_visible();
 	labelRemainingTime.set_visible();
-	extractOrPauseButton.set_label("Pause");
+	extractOrPauseButton.set_label(pauseButtonText);
 	cancelButton.set_sensitive(true);
 	extractOrPauseButton.set_image(*Gtk::manage (new Gtk::Image (Gtk::Stock::MEDIA_PAUSE, Gtk::ICON_SIZE_BUTTON)));
 	pthread_create(&extraction_thread, 0, &extractThread_fun, (void*) this);
@@ -385,21 +404,21 @@ void MainWindow::updateProgress() {
 		remainingTime = 0;
 	}
 
-	labelElapsedTime.set_text("Time elapsed : " + readableTime(time_elapsed));
-	labelRemainingTime.set_text("Time remaining : " + readableTime(remainingTime));
+	labelElapsedTime.set_text(elapsedTimeLabelText + " " + readableTime(time_elapsed));
+	labelRemainingTime.set_text(remainingTimeLabelText + " " + readableTime(remainingTime));
 	progressBar.set_text(Core::toString(progress_percentage)+ "%");
-	this->set_title("MkvExtract-Gtk" + std::string(" (") + Core::toString(progress_percentage)+ "%)");
+	this->set_title(mainWindowTitle + std::string(" (") + Core::toString(progress_percentage)+ "%)");
 }
 
 void MainWindow::onExtractionEnd(bool extractionSuccess) {
-	this->set_title("MkvExtract-Gtk");
-	extractOrPauseButton.set_label("Extract");
+	this->set_title(mainWindowTitle);
+	extractOrPauseButton.set_label(extractButtonText);
 	cancelButton.set_sensitive(false);
 	extractOrPauseButton.set_image(*Gtk::manage (new Gtk::Image (Gtk::Stock::CONVERT, Gtk::ICON_SIZE_BUTTON)));
 	progress_percentage = 0;
 	progressBar.set_fraction((double)progress_percentage / 100.0);
 	progressBar.set_text(Core::toString(progress_percentage)+ "%");
-	labelStatus.set_text("Choose track(s) to extract");
+	labelStatus.set_text(statusLabelTextChooseTracks);
 	labelElapsedTime.set_visible(false);
 	labelRemainingTime.set_visible(false);
 	if (extractionSuccess) {
@@ -449,7 +468,7 @@ void MainWindow::onFileSet() {
 	printTracksInfos(Core::MkvInfoParser::parseTracksInfos(getInputFileName()));
 
 	outputFileButton.set_current_folder(dirName(getInputFileName()));
-	labelStatus.set_text("Choose track(s) to extract");
+	labelStatus.set_text(statusLabelTextChooseTracks);
 }
 
 void MainWindow::initTime() {
