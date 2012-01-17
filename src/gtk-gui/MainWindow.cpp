@@ -387,6 +387,7 @@ void MainWindow::updateProgress() {
 
 	labelElapsedTime.set_text("Time elapsed : " + readableTime(time_elapsed));
 	labelRemainingTime.set_text("Time remaining : " + readableTime(remainingTime));
+	progressBar.set_text(Core::toString(progress_percentage)+ "%");
 	this->set_title("MkvExtract-Gtk" + std::string(" (") + Core::toString(progress_percentage)+ "%)");
 }
 
