@@ -106,6 +106,7 @@ private:
 	int remainingTime;
 	timeval lastStartTime;
 	sigc::connection con;
+	bool verbose;
 
 	void showIconOnButton();
     void startExtraction();

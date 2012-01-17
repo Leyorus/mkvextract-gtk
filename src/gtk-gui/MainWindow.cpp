@@ -86,7 +86,8 @@ MainWindow::MainWindow() :
 			extractOrPauseButton(extractButtonText),
 			cancelButton(Gtk::Stock::CANCEL),
 			labelBox(true),
-			labelTable(1,2,true)
+			labelTable(1,2,true),
+			verbose(true)
 {
     /* force using icons on stock buttons: */
     showIconOnButton();
@@ -263,8 +264,10 @@ void MainWindow::extract() {
 
 	} else { // parent process
 		setExtractionStatus(MainWindow::extracting_status);
-		std::cout << _("Command line used for extraction:") << std::endl;
-		std::cout << Core::MkvExtractor::getExtractCommandLine(getInputFileName(), toExtract) << std::endl;
+		if (verbose) {
+			std::cout << _("Command line used for extraction:") << std::endl;
+			std::cout << Core::MkvExtractor::getExtractCommandLine(getInputFileName(), toExtract) << std::endl << std::endl;
+		}
 
 		std::string str;
 		while (getLine(master, str)) {
@@ -274,7 +277,9 @@ void MainWindow::extract() {
 			if (ret > 0) {
 				setProgressPercentage(progress);
 			}
-			std::cout << str;
+			if (verbose) {
+				std::cout << str;
+			}
 
 		}
 		setExtractionStatus(MainWindow::stop_status);
