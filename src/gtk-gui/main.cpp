@@ -19,19 +19,13 @@ along with this program. If not, see  <http://www.gnu.org/licenses/>.
 ===========================================================================
 */
 
-#include <iostream>
 #include <gtkmm/main.h>
-#include <gtkmm/settings.h>
 #include "MainWindow.h"
 
 int main(int argc, char *argv[]) {
     Gtk::Main app(argc, argv);
 
     MainWindow window;
-	Glib::RefPtr<Gtk::Settings> settings = Gtk::Settings::get_default();
-	/* force using icons on stock buttons: */
-	settings->property_gtk_button_images() = true;
-
     Gtk::Main::run(window);
 
     return 0;

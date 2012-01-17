@@ -32,6 +32,7 @@ along with this program. If not, see  <http://www.gnu.org/licenses/>.
 #include <gtkmm/image.h>
 #include <glibmm/refptr.h>
 #include <gtkmm/messagedialog.h>
+#include <gtkmm/settings.h>
 
 #include <sys/time.h> // for gettimeofday() function
 
@@ -69,6 +70,12 @@ const std::string elapsedTimeLabelText = _("Elapsed time:");
 const std::string remainingTimeLabelText = _("Remaining time:");
 
 
+void MainWindow::showIconOnButton()
+{
+    Glib::RefPtr<Gtk::Settings> settings = Gtk::Settings::get_default();
+    settings->property_gtk_button_images() = true;
+}
+
 MainWindow::MainWindow() :
 			mainVBox(false, 10),
 			inputFrame(inputFrameName),
@@ -81,38 +88,35 @@ MainWindow::MainWindow() :
 			labelBox(true),
 			labelTable(1,2,true)
 {
-	this->set_title(mainWindowTitle);
-	this->signal_delete_event().connect(sigc::mem_fun(this, &MainWindow::onCloseButton));
-	this->set_border_width(10);
-	extractOrPauseButton.set_image(*Gtk::manage (new Gtk::Image (Gtk::Stock::CONVERT, Gtk::ICON_SIZE_BUTTON)));
-	inputFrame.add(inputFileButton);
-	mainVBox.pack_start(inputFrame, Gtk::PACK_SHRINK);
-	Glib::RefPtr<Gtk::FileFilter> mkvFileNameFilter = Gtk::FileFilter::create();
-	mkvFileNameFilter->set_name(mkvFileNameFilterText);
-	mkvFileNameFilter->add_mime_type("video/x-matroska");
-	inputFileButton.add_filter(mkvFileNameFilter);
-	inputFileButton.signal_file_set().connect(sigc::mem_fun(this, &MainWindow::onFileSet));
+    /* force using icons on stock buttons: */
+    showIconOnButton();
 
-	outputFrame.add(outputFileButton);
-	mainVBox.pack_start(outputFrame, Gtk::PACK_SHRINK);
-
-	mainVBox.pack_start(contentFrame, Gtk::PACK_EXPAND_WIDGET);
-	trackList.set_sensitive(false);
-	scrolledContentWindow.set_size_request(500, 200);
-
-	scrolledContentWindow.set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
-	contentFrame.add(scrolledContentWindow);
-	scrolledContentWindow.add(trackList);
-
-	 //Create the Tree model:
-	refListStore = Gtk::ListStore::create(m_Columns);
-	trackList.set_model(refListStore);
-	trackList.set_border_width(20);
-	trackList.set_rules_hint(true);
-
-	trackList.append_column_editable("", m_Columns.m_col_selected);
-
-	((Gtk::CellRendererToggle *) trackList.get_column_cell_renderer(0))->signal_toggled().connect(
+    this->set_title(mainWindowTitle);
+    this->signal_delete_event().connect(sigc::mem_fun(this, &MainWindow::onCloseButton));
+    this->set_border_width(10);
+    extractOrPauseButton.set_image(*Gtk::manage(new Gtk::Image(Gtk::Stock::CONVERT, Gtk::ICON_SIZE_BUTTON)));
+    inputFrame.add(inputFileButton);
+    mainVBox.pack_start(inputFrame, Gtk::PACK_SHRINK);
+    Glib::RefPtr<Gtk::FileFilter> mkvFileNameFilter = Gtk::FileFilter::create();
+    mkvFileNameFilter->set_name(mkvFileNameFilterText);
+    mkvFileNameFilter->add_mime_type("video/x-matroska");
+    inputFileButton.add_filter(mkvFileNameFilter);
+    inputFileButton.signal_file_set().connect(sigc::mem_fun(this, &MainWindow::onFileSet));
+    outputFrame.add(outputFileButton);
+    mainVBox.pack_start(outputFrame, Gtk::PACK_SHRINK);
+    mainVBox.pack_start(contentFrame, Gtk::PACK_EXPAND_WIDGET);
+    trackList.set_sensitive(false);
+    scrolledContentWindow.set_size_request(500, 200);
+    scrolledContentWindow.set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
+    contentFrame.add(scrolledContentWindow);
+    scrolledContentWindow.add(trackList);
+    //Create the Tree model:
+    refListStore = Gtk::ListStore::create(m_Columns);
+    trackList.set_model(refListStore);
+    trackList.set_border_width(20);
+    trackList.set_rules_hint(true);
+    trackList.append_column_editable("", m_Columns.m_col_selected);
+    ((Gtk::CellRendererToggle*)(trackList.get_column_cell_renderer(0)))->signal_toggled().connect(
 			sigc::mem_fun(this, &MainWindow::onCheckboxClicked));
 
 	trackList.append_column(columnHeaderIDText, m_Columns.m_col_id);

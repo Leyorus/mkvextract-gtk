@@ -107,7 +107,8 @@ private:
 	timeval lastStartTime;
 	sigc::connection con;
 
-	void startExtraction();
+	void showIconOnButton();
+    void startExtraction();
 	bool stopExtraction();
 	void pauseExtraction();
 	void continueExtraction();
