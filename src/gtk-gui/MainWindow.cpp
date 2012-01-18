@@ -51,6 +51,7 @@ const std::string mainWindowTitle = _("MkvExtract-Gtk");
 const std::string inputFrameName = _("Input file");
 const std::string outputFrameName = _("Output folder");
 const std::string contentFrameName = _("Content");
+const std::string commandLineFrameName = _("Command line used");
 const std::string extractButtonText = _("Extract");
 const std::string pauseButtonText = _("Pause");
 const std::string continueButtonText = _("Continue");
@@ -87,7 +88,8 @@ MainWindow::MainWindow() :
 			cancelButton(Gtk::Stock::CANCEL),
 			labelBox(true),
 			labelTable(1,2,true),
-			verbose(true)
+			commandLineFrame(commandLineFrameName),
+			verbose(false)
 {
     /* force using icons on stock buttons: */
     showIconOnButton();
@@ -98,9 +100,9 @@ MainWindow::MainWindow() :
     extractOrPauseButton.set_image(*Gtk::manage(new Gtk::Image(Gtk::Stock::CONVERT, Gtk::ICON_SIZE_BUTTON)));
     inputFrame.add(inputFileButton);
     mainVBox.pack_start(inputFrame, Gtk::PACK_SHRINK);
-    Glib::RefPtr<Gtk::FileFilter> mkvFileNameFilter = Gtk::FileFilter::create();
-    mkvFileNameFilter->set_name(mkvFileNameFilterText);
-    mkvFileNameFilter->add_mime_type("video/x-matroska");
+    Gtk::FileFilter mkvFileNameFilter;
+    mkvFileNameFilter.set_name(mkvFileNameFilterText);
+    mkvFileNameFilter.add_mime_type("video/x-matroska");
     inputFileButton.add_filter(mkvFileNameFilter);
     inputFileButton.signal_file_set().connect(sigc::mem_fun(this, &MainWindow::onFileSet));
     outputFrame.add(outputFileButton);
@@ -147,7 +149,9 @@ MainWindow::MainWindow() :
 	labelRemainingTime.set_visible(false);
 	labelRemainingTime.set_no_show_all();
 
-	mainVBox.pack_start(labelBox);
+	commandLineFrame.add(commandLineTextView);
+	mainVBox.pack_start(commandLineFrame);
+	mainVBox.pack_start(labelBox, Gtk::PACK_SHRINK);
 	labelBox.pack_start(labelStatus);
 	labelBox.pack_start(labelElapsedTime);
 	labelBox.pack_start(labelRemainingTime);
@@ -165,8 +169,6 @@ MainWindow::MainWindow() :
 
 	cancelButton.set_can_focus(false);
 	cancelButton.set_sensitive(false);
-
-	progressBar.set_show_text(true);
 
 	this->show_all();
 

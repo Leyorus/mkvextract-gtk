@@ -1,5 +1,12 @@
 add_subdirectory(yamka) 
 
+find_package(PkgConfig)
+
+pkg_check_modules(GTKMM gtkmm-2.4) # look into FindPkgConfig.cmake, 
+
+set(CMAKE_CXX_FLAGS "-O2 -Wall")
+
+
 file(GLOB_RECURSE core_source_files	core/* )
 
 file(GLOB_RECURSE gui_source_files gtk-gui/* )

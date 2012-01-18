@@ -38,6 +38,7 @@ along with this program. If not, see  <http://www.gnu.org/licenses/>.
 #include <gtkmm/scrolledwindow.h>
 #include <gtkmm/label.h>
 #include <gtkmm/table.h>
+#include <gtkmm/textview.h>
 
 
 #include <core/Common.h>
@@ -91,6 +92,8 @@ private:
 	Gtk::Label labelStatus;
 	Gtk::Label labelRemainingTime;
 	Gtk::Label labelElapsedTime;
+	Gtk::Frame commandLineFrame;
+	Gtk::TextView commandLineTextView;
 
 	std::map<int,bool> tracksToExtract;
 
