@@ -126,25 +126,31 @@ std::vector<track_info_t> MkvInfoParser::parseTracksInfos(std::string mkvFileNam
 
 	Reader loader;
 
-	uint64 bytesRead;
-	bytesRead = infos.loadSeekHead(srcFile, srcFileSize);
-	bytesRead += infos.loadViaSeekHead(srcFile, &loader, false);
+	uint64 bytesRead = 0;
+	bool file_isok = infos.loadSeekHead(srcFile, srcFileSize);
 
-	if (!bytesRead || infos.segments_.empty()) {
-		std::cerr << "Error : the input file is not a valid matroska file : " << mkvFileName << std::endl;
+	if (file_isok) {
+		file_isok = infos.loadViaSeekHead(srcFile, &loader, false);
 	}
 
-	MatroskaDoc::TSegment & segment = infos.segments_.back();
-	typedef std::deque<Segment::TTracks::TPayload::TTrack> TTrackList;
-	TTrackList trackList = segment.payload_.tracks_.payload_.tracks_;
+	if (!file_isok || infos.segments_.empty()) {
+		std::cerr << "Error : the input file is not a valid matroska file : "
+				<< mkvFileName << std::endl;
+	} else {
+		MatroskaDoc::TSegment & segment = infos.segments_.back();
+		typedef std::deque<Segment::TTracks::TPayload::TTrack> TTrackList;
+		TTrackList trackList = segment.payload_.tracks_.payload_.tracks_;
 
-	for (TTrackList::iterator it = trackList.begin(); it != trackList.end(); it++) {
-		track_info_t track;
-		track.num = toString(it->payload_.trackNumber_.payload_.get() - 1); // (-1) used for compatiblity with mkvextract utility (to solve later)
-		track.type = getTrackTypeName(it->payload_.trackType_.payload_.get());
-		track.codec = it->payload_.codecID_.payload_.get();
-		track.language = it->payload_.language_.payload_.get();
-		tracks.push_back(track);
+		for (TTrackList::iterator it = trackList.begin(); it != trackList.end();
+				it++) {
+			track_info_t track;
+			track.num = toString(it->payload_.trackNumber_.payload_.get() - 1); // (-1) used for compatiblity with mkvextract utility (to solve later)
+			track.type = getTrackTypeName(
+					it->payload_.trackType_.payload_.get());
+			track.codec = it->payload_.codecID_.payload_.get();
+			track.language = it->payload_.language_.payload_.get();
+			tracks.push_back(track);
+		}
 	}
 
 	// closing file handles:

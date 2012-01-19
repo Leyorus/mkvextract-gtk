@@ -4444,27 +4444,29 @@ namespace Yamka
                                    IDelegateLoad * loader)
   {
     // let the base class load the EBML header:
+
     uint64 bytesReadTotal = EbmlDoc::load(storage, bytesToRead, loader);
+
     bytesToRead -= bytesReadTotal;
     
-    // read Segments:
-    while (true)
-    {
-      uint64 prevBytesToRead = bytesToRead;
-      
-      bytesToRead -= eltsLoad(segments_, storage, bytesToRead, loader);
-      
-      uint64 bytesRead = prevBytesToRead - bytesToRead;
-      bytesReadTotal += bytesRead;
-      
-      if (!bytesRead)
-      {
-        break;
-      }
-    }
-    
-    // resolve positional references (seeks, cues, clusters, etc...):
-    resolveReferences();
+    if (bytesReadTotal != 0) { // check if ebml header was read
+		// read Segments:
+		while (true) {
+			uint64 prevBytesToRead = bytesToRead;
+
+			bytesToRead -= eltsLoad(segments_, storage, bytesToRead, loader);
+
+			uint64 bytesRead = prevBytesToRead - bytesToRead;
+			bytesReadTotal += bytesRead;
+
+			if (!bytesRead) {
+				break;
+			}
+		}
+
+		// resolve positional references (seeks, cues, clusters, etc...):
+		resolveReferences();
+	}
     
     return bytesReadTotal;
   }

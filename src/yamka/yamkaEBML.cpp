@@ -183,20 +183,20 @@ namespace Yamka
     Bytes oneByte(1);
     uint64 bytesReadTotal = 0;
     
-    // skip forward until we load EBML head element:
-    while (bytesToRead)
-    {
+//    // skip forward until we load EBML head element:
+//    while (bytesToRead)
+//    {
       uint64 headSize = EbmlDoc::head_.load(storage, bytesToRead, loader);
       if (headSize)
       {
         bytesToRead -= headSize;
         bytesReadTotal += headSize;
-        break;
+//        break;
       }
-      
-      storage.load(oneByte);
-      bytesToRead--;
-    }
+//
+//      storage.load(oneByte);
+//      bytesToRead--;
+//    }
     
     return bytesReadTotal;
   }

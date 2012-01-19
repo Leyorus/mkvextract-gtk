@@ -502,16 +502,27 @@ void MainWindow::updateCommandLineTextView()
 
 void MainWindow::onFileSet() {
 
-	trackList.set_sensitive(true);
-
 	tracksToExtract.clear();
 
-	printTracksInfos(Core::MkvInfoParser::parseTracksInfos(getInputFileName()));
+	std::vector<Core::track_info_t> tracks_infos = Core::MkvInfoParser::parseTracksInfos(getInputFileName());
+	printTracksInfos(tracks_infos);
 
 	outputFileButton.set_current_folder(dirName(getInputFileName()));
-	labelStatus.set_text(statusLabelTextChooseTracks);
 
 	checkUserSelection();
+
+	if (tracks_infos.size() == 0) {
+		trackList.set_sensitive(false);
+		labelStatus.set_text(statusLabelTextChooseInputFile);
+		Gtk::MessageDialog dialog(*this, _("Wrong input file format"), false, Gtk::MESSAGE_ERROR);
+		dialog.set_secondary_text(_("The input file is not a valid matroska file or doesn't contain any track.\n"
+								  "Please choose another input file."));
+		dialog.run();
+	} else {
+		trackList.set_sensitive(true);
+		labelStatus.set_text(statusLabelTextChooseTracks);
+	}
+
 }
 
 void MainWindow::onFolderChanged()
