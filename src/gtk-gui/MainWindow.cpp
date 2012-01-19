@@ -105,6 +105,7 @@ MainWindow::MainWindow() :
     mkvFileNameFilter.add_mime_type("video/x-matroska");
     inputFileButton.add_filter(mkvFileNameFilter);
     inputFileButton.signal_file_set().connect(sigc::mem_fun(this, &MainWindow::onFileSet));
+    outputFileButton.signal_current_folder_changed().connect(sigc::mem_fun(this, &MainWindow::onFolderChanged));
     outputFrame.add(outputFileButton);
     mainVBox.pack_start(outputFrame, Gtk::PACK_SHRINK);
     mainVBox.pack_start(contentFrame, Gtk::PACK_EXPAND_WIDGET);
@@ -149,6 +150,7 @@ MainWindow::MainWindow() :
 	labelRemainingTime.set_visible(false);
 	labelRemainingTime.set_no_show_all();
 
+	commandLineTextView.set_wrap_mode(Gtk::WRAP_WORD);
 	commandLineFrame.add(commandLineTextView);
 	mainVBox.pack_start(commandLineFrame);
 	mainVBox.pack_start(labelBox, Gtk::PACK_SHRINK);
@@ -198,6 +200,7 @@ std::string dirName(std::string source)
 
 void MainWindow::checkUserSelection()
 {
+    updateCommandLineTextView();
     if(isATrackSelected()){
         extractOrPauseButton.set_sensitive(true);
     }else{
@@ -483,11 +486,26 @@ bool MainWindow::onCloseButton(GdkEventAny * ev) {
 	return false;
 }
 
+void MainWindow::updateCommandLineTextView()
+{
+    std::map<int,std::string> toExtract;
+    std::map<int,bool> tracksToExtract = getUserSelection();
+    for(std::map<int,bool>::iterator i = tracksToExtract.begin();i != tracksToExtract.end();i++){
+        if(i->second){
+            toExtract[i->first] = getOutputFolder() + "/" + getFileName(i->first);
+        }
+    }
+
+    std::string extractCommandLine = Core::MkvExtractor::getExtractCommandLine(getInputFileName(), toExtract);
+    commandLineTextView.get_buffer()->set_text(extractCommandLine);
+}
+
 void MainWindow::onFileSet() {
 
 	trackList.set_sensitive(true);
 
 	tracksToExtract.clear();
+
 	printTracksInfos(Core::MkvInfoParser::parseTracksInfos(getInputFileName()));
 
 	outputFileButton.set_current_folder(dirName(getInputFileName()));
@@ -496,13 +514,13 @@ void MainWindow::onFileSet() {
 	checkUserSelection();
 }
 
+void MainWindow::onFolderChanged()
+{
+	updateCommandLineTextView();
+}
+
 void MainWindow::initTime() {
 	time_elapsed = 0;
 }
 
-std::string MainWindow::getRemainingTime() {
-	std::string ret;
-
-	return ret;
-}
 

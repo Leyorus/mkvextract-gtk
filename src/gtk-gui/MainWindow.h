@@ -111,7 +111,8 @@ private:
 	sigc::connection con;
 	bool verbose;
 
-	void checkUserSelection();
+	void updateCommandLineTextView();
+    void checkUserSelection();
     void showIconOnButton();
     void startExtraction();
 	bool stopExtraction();
@@ -119,6 +120,7 @@ private:
 	void continueExtraction();
 	void enableTimer();
 	void disableTimer();
+	void onFolderChanged();
     void onFileSet();
 	void printTracksInfos(std::vector<Core::track_info_t> tracks);
 	void updateProgress();
@@ -130,7 +132,6 @@ private:
 	bool isATrackSelected();
 	void initTime() ;
 
-	std::string getRemainingTime();
 
 	std::map<int,bool> getUserSelection() {return this->tracksToExtract;}
 	bool isExtracting();
