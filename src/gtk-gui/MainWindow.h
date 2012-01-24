@@ -47,7 +47,6 @@ along with this program. If not, see  <http://www.gnu.org/licenses/>.
 #include <map>
 #include <pthread.h>
 
-
 class ModelColumns: public Gtk::TreeModelColumnRecord {
 public:
 
@@ -97,12 +96,15 @@ private:
 
 	std::map<int,bool> tracksToExtract;
 
-	typedef enum {extracting_status, stop_status, paused_status} extraction_status_t;
+	typedef enum {extracting_status, stop_status, paused_status, extraction_error} extraction_status_t;
 	extraction_status_t current_state;
-
 	pthread_mutex_t extraction_status_mutex;
+
 	pthread_t extraction_thread;
 	pid_t extractionProcess_pid;
+
+	pthread_mutex_t bool_askedCancel_mutex;
+	bool askedCancel;
 
 	int progress_percentage;
 	int time_elapsed;

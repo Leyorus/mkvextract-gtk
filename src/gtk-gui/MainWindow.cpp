@@ -89,6 +89,7 @@ MainWindow::MainWindow() :
 			labelBox(true),
 			labelTable(1,2,true),
 			commandLineFrame(commandLineFrameName),
+			askedCancel(false),
 			verbose(false)
 {
     /* force using icons on stock buttons: */
@@ -176,6 +177,7 @@ MainWindow::MainWindow() :
 
 	current_state = stop_status;
 	pthread_mutex_init(&extraction_status_mutex, 0);
+	pthread_mutex_init(&bool_askedCancel_mutex, 0);
 }
 
 void MainWindow::printTracksInfos(std::vector<Core::track_info_t> tracks) {
@@ -293,7 +295,20 @@ void MainWindow::extract() {
 			}
 
 		}
-		setExtractionStatus(MainWindow::stop_status);
+		int exec_status;
+		waitpid(getExtractionProcessPID(), &exec_status, 0);
+		if (WIFEXITED(exec_status)){
+			setExtractionStatus(MainWindow::stop_status);
+		} else {
+				pthread_mutex_lock(&bool_askedCancel_mutex);
+				if (! askedCancel) {
+					setExtractionStatus(MainWindow::extraction_error);
+				} else {
+					askedCancel = false;
+					setExtractionStatus(MainWindow::stop_status);
+				}
+				pthread_mutex_unlock(&bool_askedCancel_mutex);
+		}
 	}
 }
 
@@ -326,6 +341,9 @@ bool MainWindow::stopExtraction() {
 
 	switch (result) {
 	case (Gtk::RESPONSE_OK):
+		pthread_mutex_lock(&bool_askedCancel_mutex);
+		askedCancel = true;
+		pthread_mutex_unlock(&bool_askedCancel_mutex);
 		kill(this->extractionProcess_pid, SIGKILL);
 		disableTimer();
 		setExtractionStatus(stop_status);
@@ -395,6 +413,9 @@ bool MainWindow::onTimeOut() {
 		onExtractionEnd(true);
 		ret = false; // disconnect timer
 		break;
+	case extraction_error:
+		onExtractionEnd(false);
+		ret = false; // disconnect timer
 	}
 	return ret;
 }
@@ -437,6 +458,18 @@ void MainWindow::updateProgress() {
 }
 
 void MainWindow::onExtractionEnd(bool extractionSuccess) {
+	if (extractionSuccess) {
+		Gtk::MessageDialog dialog(*this, _("Extraction success !"));
+		dialog.set_secondary_text(std::string(_("Extraction done in")) + " " +readableTime(time_elapsed));
+		dialog.run();
+	} else {
+		if (current_state == MainWindow::extraction_error) {
+			Gtk::MessageDialog dialog(*this, _("Extraction error !"), false, Gtk::MESSAGE_ERROR);
+			dialog.set_secondary_text(_("Error occured during extraction."));
+			dialog.run();
+		}
+	}
+
 	this->set_title(mainWindowTitle);
 	extractOrPauseButton.set_label(extractButtonText);
 	cancelButton.set_sensitive(false);
@@ -447,13 +480,7 @@ void MainWindow::onExtractionEnd(bool extractionSuccess) {
 	labelStatus.set_text(statusLabelTextChooseTracks);
 	labelElapsedTime.set_visible(false);
 	labelRemainingTime.set_visible(false);
-	if (extractionSuccess) {
-		Gtk::MessageDialog dialog(*this, _("Extraction success !"));
-		dialog.set_secondary_text(std::string(_("Extraction done in")) + " " +readableTime(time_elapsed));
-		dialog.run();
-	} else {
 
-	}
 	checkUserSelection();
 }
 
@@ -463,6 +490,7 @@ void MainWindow::onExtractOrPauseButton() {
 	case paused_status:
 		continueExtraction();
 		break;
+	case extraction_error:
 	case stop_status:
 		startExtraction();
 		break;
