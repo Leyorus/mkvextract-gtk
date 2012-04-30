@@ -56,6 +56,7 @@ public:
 		add(m_col_type);
 		add(m_col_codec);
 		add(m_col_language);
+//		add(m_col_size);
 		add(m_col_outputFileName);
 	}
 
@@ -64,7 +65,8 @@ public:
 	Gtk::TreeModelColumn<Glib::ustring> m_col_type;
 	Gtk::TreeModelColumn<Glib::ustring> m_col_codec;
 	Gtk::TreeModelColumn<Glib::ustring> m_col_language;
-	Gtk::TreeModelColumn<Glib::ustring> m_col_outputFileName;
+//	Gtk::TreeModelColumn<int> m_col_size;
+	Gtk::TreeModelColumn<std::string> m_col_outputFileName;
 };
 
 class MainWindow: public Gtk::Window {

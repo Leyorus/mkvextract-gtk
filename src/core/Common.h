@@ -31,11 +31,13 @@ namespace Core {
 		std::string type;
 		std::string codec;
 		std::string language;
+		int size;
 		track_info_t() {
 			num = "0";
 			type = "unknown";
 			codec = "unknown";
 			language = "unknown";
+			size = 0;
 		}
 	}track_info_t;
 

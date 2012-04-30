@@ -61,6 +61,7 @@ const std::string columnHeaderIDText = _("ID");
 const std::string columnHeaderTypeText = _("Type");
 const std::string columnHeaderCodecText = _("Codec");
 const std::string columnHeaderLanguageText = _("Language");
+const std::string columnHeaderSizeText = _("Size");
 const std::string columnHeaderOutputFileNameText = _("Output filename");
 
 const std::string statusLabelTextChooseInputFile = _("Choose input file");
@@ -90,7 +91,7 @@ MainWindow::MainWindow() :
 			labelTable(1,2,true),
 			commandLineFrame(commandLineFrameName),
 			askedCancel(false),
-			verbose(false)
+			verbose(true)
 {
     /* force using icons on stock buttons: */
     showIconOnButton();
@@ -128,6 +129,7 @@ MainWindow::MainWindow() :
 	trackList.append_column(columnHeaderTypeText, m_Columns.m_col_type);
 	trackList.append_column(columnHeaderCodecText, m_Columns.m_col_codec);
 	trackList.append_column(columnHeaderLanguageText, m_Columns.m_col_language);
+//	trackList.append_column(columnHeaderSizeText, m_Columns.m_col_size);
 	trackList.append_column_editable(columnHeaderOutputFileNameText, m_Columns.m_col_outputFileName);
 
 	std::vector<Gtk::TreeViewColumn*> columns = trackList.get_columns();
@@ -189,6 +191,7 @@ void MainWindow::printTracksInfos(std::vector<Core::track_info_t> tracks) {
     	row[m_Columns.m_col_type] = i->type;
     	row[m_Columns.m_col_codec] = i->codec;
     	row[m_Columns.m_col_language] = i->language;
+//    	row[m_Columns.m_col_size] = i->size;
     	row[m_Columns.m_col_outputFileName] = Core::MkvExtractor::getDefaultFileName(*i);
     	tracksToExtract[Core::toInteger(i->num)] = false;
     }
@@ -325,9 +328,7 @@ std::string MainWindow::getInputFileName(){
 std::string MainWindow::getFileName(int id) {
 	Gtk::TreeModel::Path path(Core::toString(id));
 	Gtk::TreeModel::Row row = *(refListStore->get_iter(path));
-	std::string name;
-	row.get_value(5, name);
-	return name;
+	return std::string(row[m_Columns.m_col_outputFileName]);
 }
 
 bool MainWindow::stopExtraction() {

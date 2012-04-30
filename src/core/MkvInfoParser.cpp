@@ -141,14 +141,13 @@ std::vector<track_info_t> MkvInfoParser::parseTracksInfos(std::string mkvFileNam
 		typedef std::deque<Segment::TTracks::TPayload::TTrack> TTrackList;
 		TTrackList trackList = segment.payload_.tracks_.payload_.tracks_;
 
-		for (TTrackList::iterator it = trackList.begin(); it != trackList.end();
-				it++) {
+		for (TTrackList::iterator it = trackList.begin(); it != trackList.end(); it++) {
 			track_info_t track;
 			track.num = toString(it->payload_.trackNumber_.payload_.get() - 1); // (-1) used for compatiblity with mkvextract utility (to solve later)
-			track.type = getTrackTypeName(
-					it->payload_.trackType_.payload_.get());
+			track.type = getTrackTypeName(it->payload_.trackType_.payload_.get());
 			track.codec = it->payload_.codecID_.payload_.get();
 			track.language = it->payload_.language_.payload_.get();
+			track.size = 0; //segment.payload_.clusters_.front().calcSize();
 			tracks.push_back(track);
 		}
 	}
