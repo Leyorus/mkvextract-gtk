@@ -30,6 +30,6 @@ build() {
 	make || return 1
 	mkdir -p $pkgdir/usr/bin/ 
 
-	cp src/mkvextract-gtk $pkgdir/usr/bin/
+	cp mkvextract-gtk $pkgdir/usr/bin/
 	chmod +x $pkgdir/usr/bin
 }
