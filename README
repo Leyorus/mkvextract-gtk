@@ -1,12 +1,24 @@
+This software is a simple and efficient GUI for extracting tracks from Matroska (mkv) files.
+It is written in C++, using the GTK framework.
+
+For now, it uses the tools provided by the mkvextract command line tool.
+
+
+DEPENDENCIES:
+-------------
+
+This software uses the mkvextract-cli tools to extract the mkv tracks.
+You need to install it to use the GUI.
+
+CMAKE utility is required to compile this program.
+
+To install CMAKE, run the following command:
+	- ubuntu : $ sudo apt-get install cmake
+	- archlinux (as root): $ pacman -S cmake
+
 
 COMPILATION:
 ------------
-
-Cmake utility is required to compile this program.
-
-To install it on ubuntu, run the following command:
-	$ sudo apt-get install cmake
-
 When installed, start by creating a directory for building :
 	$ mkdir build_dir
 	$ cd build_dir
@@ -17,12 +29,17 @@ Finally, to compile, just run :
 	
 The executable can be found here : build_dir/mkvextract-gtk
 
+
+INSTALL:
+--------
 To install run (as a superuser) :
 	$ make install
 	
 When installed, to launch the program, just run:
 	$ mkvextract-gtk
 	
+UNINSTALL:
+----------
 To unistall, (run as a superuser) :
 	$ make uninstall
 	
