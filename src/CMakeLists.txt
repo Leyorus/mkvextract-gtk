@@ -1,10 +1,11 @@
 add_subdirectory(yamka) 
 
 find_package(PkgConfig)
+find_package(Threads)
 
 pkg_check_modules(GTKMM gtkmm-2.4) # look into FindPkgConfig.cmake, 
 
-set(CMAKE_CXX_FLAGS "-g -Wall")
+set(CMAKE_CXX_FLAGS "-Wall")
 
 
 file(GLOB_RECURSE core_source_files	core/* )
@@ -28,6 +29,7 @@ target_link_libraries(
 	${GTKMM_LIBRARIES}
 	yamka
 	util # usefull for forkpty() function
+	${CMAKE_THREAD_LIBS_INIT}
 	)
 
 install(TARGETS 
