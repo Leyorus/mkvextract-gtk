@@ -10,16 +10,18 @@ DEPENDENCIES:
 This software uses the mkvextract-cli tools to extract the mkv tracks.
 You need to install it to use the GUI.
 
-CMAKE utility is required to compile this program.
+The following dependencies are required for the compilation:
+    - cmake
+    - boost
+    - gtkmm-2.4
 
-To install CMAKE, run the following command:
-	- ubuntu : $ sudo apt-get install cmake
-	- archlinux (as root): $ pacman -S cmake
+On archlinux, the dependencies can be installed with:
+    $ pacman -S cmake boost boost-libs gtkmm
 
 
 COMPILATION:
 ------------
-When installed, start by creating a directory for building :
+After cloning, start by creating a directory for building :
 	$ mkdir build_dir
 	$ cd build_dir
 	$ cmake /path_to_source_folder

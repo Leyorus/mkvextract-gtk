@@ -126,7 +126,6 @@ std::vector<track_info_t> MkvInfoParser::parseTracksInfos(std::string mkvFileNam
 
 	Reader loader;
 
-	uint64 bytesRead = 0;
 	bool file_isok = infos.loadSeekHead(srcFile, srcFileSize);
 
 	if (file_isok) {

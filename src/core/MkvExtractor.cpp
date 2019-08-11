@@ -83,7 +83,7 @@ std::string MkvExtractor::getExtractCommandLine(std::string inputFilePath, std::
 	std::vector<std::string> cmd = makeExtractCommandLine(inputFilePath, tracks_to_extract, true);
 	std::string ret = "";
 
-	for (int i=0; i < (cmd.size()-1) ; i++) {
+	for (size_t i=0; i < (cmd.size()-1) ; i++) {
 		ret += cmd.at(i) + " ";
 	}
 	ret += cmd.at(cmd.size()-1);
