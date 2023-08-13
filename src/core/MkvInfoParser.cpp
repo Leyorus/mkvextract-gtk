@@ -142,7 +142,7 @@ std::vector<track_info_t> MkvInfoParser::parseTracksInfos(std::string mkvFileNam
 
 		for (TTrackList::iterator it = trackList.begin(); it != trackList.end(); it++) {
 			track_info_t track;
-			track.num = toString(it->payload_.trackNumber_.payload_.get() - 1); // (-1) used for compatiblity with mkvextract utility (to solve later)
+			track.num = toString(it->payload_.trackNumber_.payload_.get());
 			track.type = getTrackTypeName(it->payload_.trackType_.payload_.get());
 			track.codec = it->payload_.codecID_.payload_.get();
 			track.language = it->payload_.language_.payload_.get();

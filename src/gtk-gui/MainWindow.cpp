@@ -57,6 +57,7 @@ const std::string pauseButtonText = _("Pause");
 const std::string continueButtonText = _("Continue");
 const std::string mkvFileNameFilterText = _("MKV Files");
 
+const std::string columnHeaderIndexText = _("Index");
 const std::string columnHeaderIDText = _("ID");
 const std::string columnHeaderTypeText = _("Type");
 const std::string columnHeaderCodecText = _("Codec");
@@ -125,7 +126,7 @@ MainWindow::MainWindow() :
     ((Gtk::CellRendererToggle*)(trackList.get_column_cell_renderer(0)))->signal_toggled().connect(
 			sigc::mem_fun(this, &MainWindow::onCheckboxClicked));
 
-	trackList.append_column(columnHeaderIDText, m_Columns.m_col_id);
+	trackList.append_column(columnHeaderIndexText, m_Columns.m_col_index);
 	trackList.append_column(columnHeaderTypeText, m_Columns.m_col_type);
 	trackList.append_column(columnHeaderCodecText, m_Columns.m_col_codec);
 	trackList.append_column(columnHeaderLanguageText, m_Columns.m_col_language);
@@ -187,13 +188,13 @@ void MainWindow::printTracksInfos(std::vector<Core::track_info_t> tracks) {
     for(std::vector<Core::track_info_t>::iterator i = tracks.begin();i != tracks.end();i++){
     	Gtk::TreeModel::Row row = *(refListStore->append());
     	row[m_Columns.m_col_selected] = false;
-    	row[m_Columns.m_col_id] = Core::toInteger(i->num);
+		row[m_Columns.m_col_index] = i - tracks.begin();
     	row[m_Columns.m_col_type] = i->type;
     	row[m_Columns.m_col_codec] = i->codec;
     	row[m_Columns.m_col_language] = i->language;
 //    	row[m_Columns.m_col_size] = i->size;
     	row[m_Columns.m_col_outputFileName] = Core::MkvExtractor::getDefaultFileName(*i);
-    	tracksToExtract[Core::toInteger(i->num)] = false;
+    	tracksToExtract[i - tracks.begin()] = false;
     }
 }
 
@@ -219,7 +220,7 @@ void MainWindow::checkUserSelection()
 void MainWindow::onCheckboxClicked(Glib::ustring str) {
 	Gtk::TreeModel::Path path(str.c_str());
 	Gtk::TreeModel::Row row = *(refListStore->get_iter(path));
-	tracksToExtract[row[m_Columns.m_col_id]] = !tracksToExtract[row[m_Columns.m_col_id]];
+	tracksToExtract[row[m_Columns.m_col_index]] = !tracksToExtract[row[m_Columns.m_col_index]];
     checkUserSelection();
 }
 
