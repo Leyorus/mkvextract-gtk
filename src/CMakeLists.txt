@@ -19,6 +19,10 @@ file(GLOB_RECURSE merge_source_files merge/* common/*)
 link_directories(${GTKMM_LIBRARY_DIRS})
 include_directories(. yamka ${GTKMM_INCLUDE_DIRS})
 
+if(COMMAND cmake_policy)
+    cmake_policy(SET CMP0003 NEW)
+  endif(COMMAND cmake_policy)
+
 add_executable(
 	${PROJECT_NAME}
 	${core_source_files} 
