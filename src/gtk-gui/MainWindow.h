@@ -39,6 +39,7 @@ along with this program. If not, see  <http://www.gnu.org/licenses/>.
 #include <gtkmm/label.h>
 #include <gtkmm/table.h>
 #include <gtkmm/textview.h>
+#include <glibmm.h>
 
 
 #include <core/Common.h>

@@ -47,7 +47,7 @@ along with this program. If not, see  <http://www.gnu.org/licenses/>.
 using namespace std;
 
 
-const std::string mainWindowTitle = _("MkvExtract-Gtk");
+const std::string mainWindowTitle = _("MkvExtract");
 const std::string inputFrameName = _("Input file");
 const std::string outputFrameName = _("Output folder");
 const std::string contentFrameName = _("Content");
@@ -103,9 +103,9 @@ MainWindow::MainWindow() :
     extractOrPauseButton.set_image(*Gtk::manage(new Gtk::Image(Gtk::Stock::CONVERT, Gtk::ICON_SIZE_BUTTON)));
     inputFrame.add(inputFileButton);
     mainVBox.pack_start(inputFrame, Gtk::PACK_SHRINK);
-    Gtk::FileFilter mkvFileNameFilter;
-    mkvFileNameFilter.set_name(mkvFileNameFilterText);
-    mkvFileNameFilter.add_mime_type("video/x-matroska");
+    auto mkvFileNameFilter = Gtk::FileFilter::create();
+    mkvFileNameFilter->set_name(mkvFileNameFilterText);
+    mkvFileNameFilter->add_mime_type("video/x-matroska");
     inputFileButton.add_filter(mkvFileNameFilter);
     inputFileButton.signal_file_set().connect(sigc::mem_fun(this, &MainWindow::onFileSet));
     outputFileButton.signal_current_folder_changed().connect(sigc::mem_fun(this, &MainWindow::onFolderChanged));
@@ -275,7 +275,7 @@ void MainWindow::extract() {
 	int master;
 	setExtractionProcessPID(forkpty(&master, NULL, NULL, NULL));
 	if (getExtractionProcessPID() == 0) { // child process
-		close(master);
+		close();
 
 		Core::MkvExtractor::extractTracks(getInputFileName(), toExtract);
 

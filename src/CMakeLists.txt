@@ -3,7 +3,7 @@ add_subdirectory(yamka)
 find_package(PkgConfig)
 find_package(Threads)
 
-pkg_check_modules(GTKMM gtkmm-2.4>=2.4) # look into FindPkgConfig.cmake, 
+pkg_check_modules(GTKMM gtkmm-3.0>=3.0) # look into FindPkgConfig.cmake, 
 
 set(CMAKE_CXX_FLAGS "-Wall")
 
