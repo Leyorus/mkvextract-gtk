@@ -19,14 +19,11 @@ along with this program. If not, see  <http://www.gnu.org/licenses/>.
 ===========================================================================
 */
 
-#include <gtkmm/main.h>
+#include <gtkmm/application.h>
 #include "MainWindow.h"
 
 int main(int argc, char *argv[]) {
-    Gtk::Main app(argc, argv);
-
+    auto app = Gtk::Application::create("mkvextract-gtk");
     MainWindow window;
-    Gtk::Main::run(window);
-
-    return 0;
+    return app->run(window, argc, argv);
 }
