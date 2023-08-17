@@ -113,7 +113,7 @@ MainWindow::MainWindow() :
     mainVBox.pack_start(outputFrame, Gtk::PACK_SHRINK);
     mainVBox.pack_start(contentFrame, Gtk::PACK_EXPAND_WIDGET);
     trackList.set_sensitive(false);
-    scrolledContentWindow.set_size_request(500, 200);
+    scrolledContentWindow.set_size_request(600, 300);
     scrolledContentWindow.set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
     contentFrame.add(scrolledContentWindow);
     scrolledContentWindow.add(trackList);
