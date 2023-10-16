@@ -39,6 +39,7 @@ along with this program. If not, see  <http://www.gnu.org/licenses/>.
 #include <gtkmm/label.h>
 #include <gtkmm/table.h>
 #include <gtkmm/textview.h>
+#include <glibmm.h>
 
 
 #include <core/Common.h>
@@ -52,7 +53,7 @@ public:
 
 	ModelColumns() {
 		add(m_col_selected);
-		add(m_col_id);
+		add(m_col_index);
 		add(m_col_type);
 		add(m_col_codec);
 		add(m_col_language);
@@ -61,7 +62,7 @@ public:
 	}
 
 	Gtk::TreeModelColumn<bool> m_col_selected;
-	Gtk::TreeModelColumn<int> m_col_id;
+	Gtk::TreeModelColumn<int> m_col_index;
 	Gtk::TreeModelColumn<Glib::ustring> m_col_type;
 	Gtk::TreeModelColumn<Glib::ustring> m_col_codec;
 	Gtk::TreeModelColumn<Glib::ustring> m_col_language;

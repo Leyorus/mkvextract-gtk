@@ -13,10 +13,12 @@ You need to install it to use the GUI.
 The following dependencies are required for the compilation:
     - cmake
     - boost
-    - gtkmm-2.4
+    - make
+    - pkgconf
+    - gtkmm 3.X
 
 On archlinux, the dependencies can be installed with:
-    $ pacman -S cmake boost boost-libs gtkmm
+    $ pacman -S base-devel cmake boost gtkmm3
 
 
 COMPILATION:

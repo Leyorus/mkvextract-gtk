@@ -3,7 +3,7 @@ add_subdirectory(yamka)
 find_package(PkgConfig)
 find_package(Threads)
 
-pkg_check_modules(GTKMM gtkmm-2.4>=2.4) # look into FindPkgConfig.cmake, 
+pkg_check_modules(GTKMM gtkmm-3.0>=3.0) # look into FindPkgConfig.cmake, 
 
 set(CMAKE_CXX_FLAGS "-Wall")
 
@@ -18,6 +18,10 @@ file(GLOB_RECURSE merge_source_files merge/* common/*)
 	
 link_directories(${GTKMM_LIBRARY_DIRS})
 include_directories(. yamka ${GTKMM_INCLUDE_DIRS})
+
+if(COMMAND cmake_policy)
+    cmake_policy(SET CMP0003 NEW)
+  endif(COMMAND cmake_policy)
 
 add_executable(
 	${PROJECT_NAME}

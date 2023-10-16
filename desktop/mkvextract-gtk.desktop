@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.1
+Type=Application
+Name=MKVExtract
+Comment=Extract tracks from matroska files
+Icon=mkvextract-gtk
+Exec=mkvextract-gtk
+Actions=
+MimeType=video/x-matroska-3d;video/x-matroska;audio/x-matroska;
+Categories=AudioVideo;AudioVideoEditing;

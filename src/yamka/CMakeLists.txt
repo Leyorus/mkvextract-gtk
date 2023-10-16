@@ -1,6 +1,6 @@
 project(yamka)
 
-cmake_minimum_required(VERSION 2.8.0)
+cmake_minimum_required(VERSION 3.5.0)
 include_directories(AFTER .)
 
 find_package(Boost REQUIRED)
